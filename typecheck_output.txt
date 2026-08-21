@@ -1,0 +1,4 @@
+
+> pass-eadvising-system@0.0.1 typecheck C:\Users\DELL\Documents\pass-eadvising-system
+> tsc --noEmit
+

@@ -1,0 +1,225 @@
+.dashboard-shell,
+.dashboard-sidebar-surface {
+  --pass-cod: #1a1617;
+  --pass-gold: #ebc42e;
+  --pass-red: #c9121f;
+  --pass-iron: #eaeaeb;
+
+  --background: #eaeaeb;
+  --foreground: #1a1617;
+  --card: #ffffff;
+  --card-foreground: #1a1617;
+  --popover: #ffffff;
+  --popover-foreground: #1a1617;
+  --primary: #c9121f;
+  --primary-foreground: #eaeaeb;
+  --secondary: #f3f3f4;
+  --secondary-foreground: #1a1617;
+  --muted: #dedfe0;
+  --muted-foreground: #6b6566;
+  --accent: #ebc42e;
+  --accent-foreground: #1a1617;
+  --destructive: #c9121f;
+  --destructive-foreground: #eaeaeb;
+  --border: rgb(26 22 23 / 0.1);
+  --input: rgb(26 22 23 / 0.12);
+  --ring: #ebc42e;
+  --chart-1: #c9121f;
+  --chart-2: #ebc42e;
+  --chart-3: #1a1617;
+  --chart-4: #8a0c14;
+  --chart-5: #c9a520;
+  --pass-sidebar-bg: #ffffff;
+  --pass-sidebar-fg: #1a1617;
+  --pass-sidebar-muted: rgb(26 22 23 / 0.48);
+  --pass-sidebar-subtle: rgb(26 22 23 / 0.38);
+  --pass-sidebar-hover: rgb(26 22 23 / 0.05);
+  --pass-sidebar-active: rgb(235 196 46 / 0.18);
+  --pass-sidebar-border: rgb(26 22 23 / 0.1);
+  --pass-sidebar-icon-bg: rgb(26 22 23 / 0.06);
+  --pass-sidebar-orb-a: rgb(201 18 31 / 0.12);
+  --pass-sidebar-orb-b: rgb(235 196 46 / 0.18);
+  --sidebar: var(--pass-sidebar-bg);
+  --sidebar-foreground: var(--pass-sidebar-fg);
+  --sidebar-primary: #ebc42e;
+  --sidebar-primary-foreground: #1a1617;
+  --sidebar-accent: var(--pass-sidebar-hover);
+  --sidebar-accent-foreground: #ebc42e;
+  --sidebar-border: var(--pass-sidebar-border);
+  --sidebar-ring: #ebc42e;
+  --radius: 0.9rem;
+  --shadow-2xs: 0 1px 2px rgb(26 22 23 / 0.04);
+  --shadow-xs: 0 1px 2px rgb(26 22 23 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(26 22 23 / 0.06), 0 1px 2px rgb(26 22 23 / 0.04);
+  --shadow: 0 4px 18px rgb(26 22 23 / 0.07);
+  --shadow-md: 0 10px 28px rgb(26 22 23 / 0.09);
+  --shadow-lg: 0 18px 40px rgb(26 22 23 / 0.11);
+  --shadow-xl: 0 24px 48px rgb(26 22 23 / 0.13);
+  --shadow-2xl: 0 32px 64px rgb(26 22 23 / 0.16);
+}
+
+.dark .dashboard-shell,
+.dark .dashboard-sidebar-surface {
+  --background: #121011;
+  --foreground: #eaeaeb;
+  --card: #1c1819;
+  --card-foreground: #eaeaeb;
+  --popover: #1c1819;
+  --popover-foreground: #eaeaeb;
+  --secondary: #2a2425;
+  --secondary-foreground: #eaeaeb;
+  --muted: #2a2425;
+  --muted-foreground: #b0aaab;
+  --border: rgb(234 234 235 / 0.1);
+  --input: rgb(234 234 235 / 0.12);
+  --pass-sidebar-bg: #1a1617;
+  --pass-sidebar-fg: #eaeaeb;
+  --pass-sidebar-muted: rgb(234 234 235 / 0.45);
+  --pass-sidebar-subtle: rgb(234 234 235 / 0.35);
+  --pass-sidebar-hover: rgb(255 255 255 / 0.06);
+  --pass-sidebar-active: rgb(255 255 255 / 0.08);
+  --pass-sidebar-border: rgb(234 234 235 / 0.08);
+  --pass-sidebar-icon-bg: rgb(255 255 255 / 0.05);
+  --pass-sidebar-orb-a: rgb(201 18 31 / 0.25);
+  --pass-sidebar-orb-b: rgb(235 196 46 / 0.2);
+  --sidebar: var(--pass-sidebar-bg);
+  --sidebar-foreground: var(--pass-sidebar-fg);
+  --sidebar-accent: var(--pass-sidebar-hover);
+  --sidebar-border: var(--pass-sidebar-border);
+}
+
+@keyframes dashboard-accent-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes dashboard-orb {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(12px, -10px, 0) scale(1.12);
+    opacity: 0.75;
+  }
+}
+
+@keyframes dashboard-brand-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes dashboard-nav-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dashboard-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-rail {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(235 196 46 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 14px 1px rgb(235 196 46 / 0.55);
+  }
+}
+
+@keyframes dashboard-header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-accent-bar {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #c9121f 0%,
+    #ebc42e 40%,
+    #ebc42e 60%,
+    #c9121f 100%
+  );
+  background-size: 220% 100%;
+  animation: dashboard-accent-shift 7s linear infinite;
+}
+
+.dashboard-orb {
+  animation: dashboard-orb 10s ease-in-out infinite;
+}
+
+.dashboard-orb-delayed {
+  animation-delay: -4s;
+  animation-duration: 13s;
+}
+
+.dashboard-brand-glow {
+  animation: dashboard-brand-glow 3.6s ease-in-out infinite;
+}
+
+.dashboard-nav-item {
+  animation: dashboard-nav-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-nav-rail {
+  animation: dashboard-rail 2.4s ease-in-out infinite;
+}
+
+.dashboard-header-enter {
+  animation: dashboard-header-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-page-enter {
+  animation: dashboard-page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-sidebar-enter {
+  animation: dashboard-nav-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-accent-bar,
+  .dashboard-orb,
+  .dashboard-orb-delayed,
+  .dashboard-brand-glow,
+  .dashboard-nav-item,
+  .dashboard-nav-rail,
+  .dashboard-header-enter,
+  .dashboard-page-enter,
+  .dashboard-sidebar-enter {
+    animation: none;
+  }
+}

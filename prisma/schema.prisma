@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id                    String                 @id @default(cuid())
+  name                  String?
+  email                 String?                @unique
+  emailVerified         DateTime?              @map("email_verified")
+  image                 String?
+  password              String?
+  role                  UserRole               @default(USER)
+  isTwoFactorEnabled    Boolean                @default(false)
+  mustChangePassword    Boolean                @default(false) @map("must_change_password")
+  twoFactorConfirmation TwoFactorConfirmation?
+  student               Student?
+  head                  Head?
+  accounts              Account[]
+  sessions              Session[]
+
+  @@map("users")
+}
+
+model Student {
+  id            String             @id @default(cuid())
+  studentId     String             @unique @map("student_id")
+  userId        String             @unique @map("user_id")
+  email         String?            @unique
+  fullName      String             @map("full_name")
+  course        String
+  yearLevel     Int                @map("year_level")
+  currentSemester SemesterTerm     @default(FIRST) @map("current_semester")
+  curriculum    String
+  curriculumId  String?            @map("curriculum_id")
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  curriculumRef Curriculum?        @relation(fields: [curriculumId], references: [id], onDelete: SetNull)
+  grades        StudentGrade[]
+  evaluations   EvaluationResult[]
+  retakes       SubjectRetake[]
+  curriculumShifts StudentCurriculumShift[]
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@index([curriculumId])
+  @@index([userId])
+  @@map("students")
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  title       String
+  isActive    Boolean      @default(true) @map("is_active")
+  curriculums Curriculum[]
+  headCourses HeadCourse[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("courses")
+}
+
+model Head {
+  id        String       @id @default(cuid())
+  userId    String       @unique @map("user_id")
+  email     String       @unique
+  fullName  String       @map("full_name")
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courses   HeadCourse[]
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("heads")
+}
+
+model HeadCourse {
+  id        String   @id @default(cuid())
+  headId    String   @map("head_id")
+  courseId  String   @map("course_id")
+  head      Head     @relation(fields: [headId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([headId, courseId])
+  @@index([courseId])
+  @@map("head_courses")
+}
+
+model Curriculum {
+  id                String               @id @default(cuid())
+  courseId          String               @map("course_id")
+  programCode       String               @map("program_code")
+  title             String
+  batchLabel        String               @map("batch_label")
+  batchYear         Int                  @map("batch_year")
+  versionTag        CurriculumVersionTag @default(NEW)
+  isActive          Boolean              @default(true) @map("is_active")
+  notes             String?
+  course            Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  students          Student[]
+  subjects          CurriculumSubject[]
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  evaluationResults EvaluationResult[]
+  shiftsFrom        StudentCurriculumShift[] @relation("CurriculumShiftFrom")
+  shiftsTo          StudentCurriculumShift[] @relation("CurriculumShiftTo")
+
+  @@unique([programCode, batchYear])
+  @@index([programCode, versionTag])
+  @@index([courseId])
+  @@map("curriculums")
+}
+
+model Subject {
+  id                String                @id @default(cuid())
+  code              String                @unique
+  description       String
+  units             Int
+  offerings         CurriculumSubject[]
+  prerequisites     SubjectPrerequisite[] @relation("SubjectToPrerequisite")
+  dependentSubjects SubjectPrerequisite[] @relation("PrerequisiteToSubject")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  @@map("subjects")
+}
+
+model CurriculumSubject {
+  id                String         @id @default(cuid())
+  curriculumId      String         @map("curriculum_id")
+  subjectId         String         @map("subject_id")
+  yearLevel         Int            @map("year_level")
+  semester          SemesterTerm
+  displayOrder      Int            @default(0) @map("display_order")
+  prerequisiteNote           String? @map("prerequisite_note")
+  minYearStanding            Int?    @map("min_year_standing")
+  minCurriculumUnitsPercent  Int?    @map("min_curriculum_units_percent")
+  curriculum   Curriculum     @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  subject      Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  grades       StudentGrade[]
+  retakes      SubjectRetake[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@unique([curriculumId, subjectId])
+  @@index([curriculumId, yearLevel, semester])
+  @@map("curriculum_subjects")
+}
+
+model SubjectPrerequisite {
+  id             String   @id @default(cuid())
+  subjectId      String   @map("subject_id")
+  prerequisiteId String   @map("prerequisite_id")
+  subject        Subject  @relation("PrerequisiteToSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  prerequisite   Subject  @relation("SubjectToPrerequisite", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([subjectId, prerequisiteId])
+  @@index([prerequisiteId])
+  @@map("subject_prerequisites")
+}
+
+model StudentGrade {
+  id                  String            @id @default(cuid())
+  studentId           String            @map("student_id")
+  curriculumSubjectId String            @map("curriculum_subject_id")
+  grade               Decimal?          @db.Decimal(5, 2)
+  status              GradeStatus       @default(PENDING)
+  remarks             String?
+  student             Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curriculumSubject   CurriculumSubject @relation(fields: [curriculumSubjectId], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  @@unique([studentId, curriculumSubjectId])
+  @@index([status])
+  @@map("student_grades")
+}
+
+model EvaluationResult {
+  id           String           @id @default(cuid())
+  studentId    String           @map("student_id")
+  curriculumId String           @map("curriculum_id")
+  yearLevel    Int              @default(1) @map("year_level")
+  semester     SemesterTerm     @default(FIRST)
+  status       EvaluationStatus @default(PENDING)
+  summary      String?
+  submittedBy  UserRole?        @map("submitted_by")
+  submittedAt  DateTime?        @map("submitted_at")
+  approvedBy   UserRole?        @map("approved_by")
+  approvedAt   DateTime?        @map("approved_at")
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curriculum   Curriculum       @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  @@unique([studentId, curriculumId, yearLevel, semester])
+  @@index([studentId, status])
+  @@index([curriculumId, status])
+  @@map("evaluation_results")
+}
+
+model StudentCurriculumShift {
+  id                   String      @id @default(cuid())
+  studentId            String      @map("student_id")
+  fromCurriculumId     String?     @map("from_curriculum_id")
+  toCurriculumId       String      @map("to_curriculum_id")
+  fromProgramCode      String      @map("from_program_code")
+  fromCurriculumLabel  String      @map("from_curriculum_label")
+  toProgramCode        String      @map("to_program_code")
+  toCurriculumLabel    String      @map("to_curriculum_label")
+  copiedGrades         Int         @default(0) @map("copied_grades")
+  student              Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fromCurriculum       Curriculum? @relation("CurriculumShiftFrom", fields: [fromCurriculumId], references: [id], onDelete: SetNull)
+  toCurriculum         Curriculum  @relation("CurriculumShiftTo", fields: [toCurriculumId], references: [id], onDelete: Restrict)
+  createdAt            DateTime    @default(now()) @map("created_at")
+
+  @@index([studentId, createdAt])
+  @@map("student_curriculum_shifts")
+}
+
+model SubjectRetake {
+  id                  String          @id @default(cuid())
+  studentId           String          @map("student_id")
+  curriculumSubjectId String          @map("curriculum_subject_id")
+  status              RetakeStatus    @default(CONFIRMED)
+  schedule            RetakeSchedule
+  targetYearLevel     Int             @map("target_year_level")
+  targetSemester      SemesterTerm    @map("target_semester")
+  failedAtYearLevel   Int             @map("failed_at_year_level")
+  failedAtSemester    SemesterTerm    @map("failed_at_semester")
+  originalGrade       Decimal?        @db.Decimal(5, 2) @map("original_grade")
+  confirmedAt         DateTime        @default(now()) @map("confirmed_at")
+  student             Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curriculumSubject   CurriculumSubject @relation(fields: [curriculumSubjectId], references: [id], onDelete: Cascade)
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  @@unique([studentId, curriculumSubjectId])
+  @@index([studentId, status, targetYearLevel, targetSemester])
+  @@map("subject_retakes")
+}
+
+model VerificationToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorConfirmation {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+enum UserRole {
+  ADMIN
+  HEAD
+  USER
+}
+
+enum CurriculumVersionTag {
+  OLD
+  NEW
+}
+
+enum SemesterTerm {
+  FIRST
+  SECOND
+}
+
+enum GradeStatus {
+  PASSED
+  FAILED
+  INCOMPLETE
+  PENDING
+}
+
+enum EvaluationStatus {
+  PENDING
+  EVALUATED
+  COMPLETED
+}
+
+enum RetakeSchedule {
+  NEXT_SEMESTER
+  NEXT_YEAR
+}
+
+enum RetakeStatus {
+  CONFIRMED
+  COMPLETED
+}

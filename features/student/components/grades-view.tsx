@@ -1,0 +1,252 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { Clock } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { isEvaluationApproved } from '@/lib/evaluation';
+import type { EvaluationStatus } from '@/app/generated/prisma/enums';
+import type { GradePassSettings } from '@/lib/grade-evaluation';
+import type { SemesterTermValue } from '@/lib/semester-terms';
+
+import { GradeSubmissionForm } from './grade-submission-form';
+import { RetakeRequestForm } from './retake-request-form';
+import StudentEvaluationForm from './student-evaluation-form';
+import type { CurriculumItem, ExistingGrade, StudentPortalStudent } from '../lib/types';
+
+interface GradesViewProps {
+  student: StudentPortalStudent;
+  studentId: string;
+  curriculumId: string;
+  semester: SemesterTermValue;
+  currentTermLabel: string;
+  offerings: CurriculumItem[];
+  retakeOfferings: CurriculumItem[];
+  existingGrades: Record<string, ExistingGrade>;
+  gradePassSettings: GradePassSettings;
+  evaluationStatus: EvaluationStatus;
+  hasSubmittedTermGrades: boolean;
+  deferredSubjects: CurriculumItem[];
+  gradeCounts: Record<'passed' | 'failed' | 'incomplete' | 'pending', number>;
+}
+
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: 'pass' | 'fail' | 'warn' | 'muted';
+}) {
+  const tones = {
+    pass: 'border-l-emerald-500',
+    fail: 'border-l-rose-500',
+    warn: 'border-l-amber-500',
+    muted: 'border-l-(--pass-gold)',
+  };
+
+  return (
+    <div className={`rounded-xl border border-border/80 border-l-4 bg-background/60 p-3 ${tones[tone]}`}>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-2xl font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+export function GradesView({
+  student,
+  studentId,
+  curriculumId,
+  semester,
+  currentTermLabel,
+  offerings,
+  retakeOfferings,
+  existingGrades,
+  gradePassSettings,
+  evaluationStatus,
+  hasSubmittedTermGrades,
+  deferredSubjects,
+  gradeCounts,
+}: GradesViewProps) {
+  const [submittedGrades, setSubmittedGrades] = useState<Record<string, ExistingGrade> | null>(
+    null
+  );
+
+  const formOfferings = useMemo(
+    () => [...retakeOfferings, ...offerings],
+    [retakeOfferings, offerings]
+  );
+
+  const gradesLocked = hasSubmittedTermGrades || submittedGrades !== null;
+  const gradesForSlip = useMemo(
+    () =>
+      submittedGrades ? { ...existingGrades, ...submittedGrades } : existingGrades,
+    [existingGrades, submittedGrades]
+  );
+
+  const failedForRequest = useMemo(() => {
+    const byId = new Map(
+      deferredSubjects
+        .filter((subject) => subject.scheduleKind === 'FAILED')
+        .map((subject) => [subject.id, subject])
+    );
+    for (const offering of formOfferings) {
+      const status = gradesForSlip[offering.id]?.status;
+      if (status === 'FAILED' && !byId.has(offering.id)) {
+        byId.set(offering.id, { ...offering, scheduleKind: 'FAILED' });
+      }
+    }
+    return Array.from(byId.values());
+  }, [deferredSubjects, formOfferings, gradesForSlip]);
+
+  const leftoverForRequest = useMemo(
+    () =>
+      deferredSubjects.filter(
+        (subject) =>
+          subject.scheduleKind === 'PENDING' || subject.scheduleKind === 'INCOMPLETE'
+      ),
+    [deferredSubjects]
+  );
+
+  if (gradesLocked) {
+    return (
+      <div className="space-y-6">
+        <Alert className="border-(--pass-gold)/40 bg-(--pass-gold)/10">
+          <Clock />
+          <AlertTitle className="text-pretty">
+            {isEvaluationApproved(evaluationStatus)
+              ? 'Your grades have been approved.'
+              : evaluationStatus === 'EVALUATED'
+                ? 'Your department head has evaluated this term.'
+                : 'You already saved your grades. Submit the slip to the registrar.'}
+          </AlertTitle>
+          <AlertDescription className="text-pretty">
+            {isEvaluationApproved(evaluationStatus)
+              ? 'The registrar or admin has approved this term. You can print, download, or email the form below.'
+              : evaluationStatus === 'EVALUATED'
+                ? 'Print, download, or email the form below while the registrar or admin checks and approves your evaluation.'
+                : 'Grade entry is closed for this term. Print or submit the grade slip to the registrar. Your department head will evaluate by date, then the registrar or admin will check and approve.'}
+          </AlertDescription>
+        </Alert>
+
+        <GradeSubmissionForm
+          student={student}
+          termLabel={currentTermLabel}
+          offerings={formOfferings}
+          existingGrades={gradesForSlip}
+        />
+
+        {failedForRequest.length > 0 ? (
+          <div className="space-y-3">
+            <Alert className="border-rose-500/40 bg-rose-500/10">
+              <AlertTitle className="text-pretty">Failed subjects</AlertTitle>
+              <AlertDescription className="text-pretty">
+                Print the retake request below and submit it to an administrator. After they
+                confirm next semester or next year, the subject will appear on your grade form
+                for that term.
+              </AlertDescription>
+            </Alert>
+            <RetakeRequestForm
+              student={student}
+              termLabel={currentTermLabel}
+              failedSubjects={failedForRequest}
+              existingGrades={gradesForSlip}
+            />
+          </div>
+        ) : null}
+
+        {leftoverForRequest.length > 0 ? (
+          <div className="space-y-3">
+            <Alert className="border-amber-500/40 bg-amber-500/10">
+              <AlertTitle className="text-pretty">Leftover subjects from an earlier term</AlertTitle>
+              <AlertDescription className="text-pretty">
+                These subjects are still pending or incomplete (for example 1st semester
+                subjects after a shift while you are already in 2nd semester). Print the
+                request below so an administrator can assign each subject to next semester
+                or next year.
+              </AlertDescription>
+            </Alert>
+            <RetakeRequestForm
+              student={student}
+              termLabel={currentTermLabel}
+              failedSubjects={leftoverForRequest}
+              existingGrades={gradesForSlip}
+              variant="leftover"
+            />
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <StudentEvaluationForm
+        studentId={studentId}
+        curriculumId={curriculumId}
+        semester={semester}
+        offerings={formOfferings}
+        existingGrades={existingGrades}
+        gradePassSettings={gradePassSettings}
+        evaluationStatus={evaluationStatus}
+        onSaved={setSubmittedGrades}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick status</CardTitle>
+          <CardDescription>
+            Counts from saved grades (status set automatically from numeric grades).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Passed" value={gradeCounts.passed} tone="pass" />
+          <StatCard label="Failed" value={gradeCounts.failed} tone="fail" />
+          <StatCard label="Incomplete" value={gradeCounts.incomplete} tone="warn" />
+          <StatCard label="Pending" value={gradeCounts.pending} tone="muted" />
+        </CardContent>
+      </Card>
+
+      {failedForRequest.length > 0 ? (
+        <div className="space-y-3">
+          <Alert className="border-rose-500/40 bg-rose-500/10">
+            <AlertTitle className="text-pretty">Request a retake</AlertTitle>
+            <AlertDescription className="text-pretty">
+              Print this form and submit it to an administrator. After they confirm next
+              semester or next year, the failed subject will appear on your grade form for
+              that term.
+            </AlertDescription>
+          </Alert>
+          <RetakeRequestForm
+            student={student}
+            termLabel={currentTermLabel}
+            failedSubjects={failedForRequest}
+            existingGrades={gradesForSlip}
+          />
+        </div>
+      ) : null}
+
+      {leftoverForRequest.length > 0 ? (
+        <div className="space-y-3">
+          <Alert className="border-amber-500/40 bg-amber-500/10">
+            <AlertTitle className="text-pretty">Request leftover subjects</AlertTitle>
+            <AlertDescription className="text-pretty">
+              Print this form so an administrator can assign unfinished 1st semester (or
+              earlier) subjects to next semester or next year, the same way failed
+              subjects are scheduled.
+            </AlertDescription>
+          </Alert>
+          <RetakeRequestForm
+            student={student}
+            termLabel={currentTermLabel}
+            failedSubjects={leftoverForRequest}
+            existingGrades={gradesForSlip}
+            variant="leftover"
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
