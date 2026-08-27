@@ -76,14 +76,21 @@ export const LoginForm = () => {
   };
 
   return (
-    <CardWrapper
-      title={showTwoFactor ? "Two-factor authentication" : "Sign in"}
-      description={
-        showTwoFactor
-          ? "Enter the 6-digit code from your authenticator app."
-          : "Use your school email and password to access your account."
-      }
-    >
+    <>
+      <span
+        className="pointer-events-none fixed top-4 right-4 z-40 select-none font-heading text-sm font-semibold tracking-wide text-(--pass-red)/50 dark:text-(--pass-gold)/45"
+        aria-hidden
+      >
+        v2
+      </span>
+      <CardWrapper
+        title={showTwoFactor ? "Two-factor authentication" : "Sign in"}
+        description={
+          showTwoFactor
+            ? "Enter the 6-digit code from your authenticator app."
+            : "Use your school email and password to access your account."
+        }
+      >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-4">
           {showTwoFactor ? (
@@ -163,6 +170,7 @@ export const LoginForm = () => {
           )}
         </Button>
       </form>
-    </CardWrapper>
+      </CardWrapper>
+    </>
   );
 };

@@ -35,7 +35,8 @@ import {
 import { ApproveEvaluationSchema, EvaluateStudentSchema, SaveStudentGradesSchema, SubmitEvaluationSchema } from '@/schemas';
 import { applyStudentProgression, getMaxYearLevel, getNextEnrollmentTerm } from '@/lib/student-progression';
 import { listConfirmedRetakeOfferings } from '@/lib/subject-retakes';
-import { deriveStatusFromGrade } from '@/lib/grade-evaluation';
+import { Prisma } from '@/app/generated/prisma/client';
+import { deriveStatusFromGrade, parseNumericGrade } from '@/lib/grade-evaluation';
 import { canApproveTerm, canEvaluateTerm, requireStudentRecordAccess } from '@/lib/staff-access';
 import {
   getTermEvaluationRecord,
@@ -1209,57 +1210,90 @@ export const saveStudentGrades = async (
 
   try {
     const gradePassSettings = await getGradePassSettings();
+    const subjectIds = [...new Set(grades.map((g) => g.curriculumSubjectId))];
 
-    await db.$transaction(async (tx) => {
-      for (const g of grades) {
-        const existing = await tx.studentGrade.findUnique({
-          where: { studentId_curriculumSubjectId: { studentId, curriculumSubjectId: g.curriculumSubjectId } },
-        });
+    const existingRows = subjectIds.length
+      ? await db.studentGrade.findMany({
+          where: { studentId, curriculumSubjectId: { in: subjectIds } },
+          select: { curriculumSubjectId: true, status: true },
+        })
+      : [];
+    const existingBySubject = new Map(
+      existingRows.map((row) => [row.curriculumSubjectId, row])
+    );
 
-        const derivedStatus = deriveStatusFromGrade(g.grade, gradePassSettings);
-        let status: GradeStatus;
+    const upserts: Array<{
+      curriculumSubjectId: string;
+      status: GradeStatus;
+      grade: number | null;
+    }> = [];
+    const passedSubjectIds: string[] = [];
 
-        if (derivedStatus) {
-          status = derivedStatus;
-        } else if (isStaff) {
-          status = g.status;
-        } else {
-          status = existing?.status || 'PENDING';
-        }
+    for (const g of grades) {
+      const existing = existingBySubject.get(g.curriculumSubjectId);
+      const numericGrade = parseNumericGrade(g.grade);
+      const derivedStatus = deriveStatusFromGrade(g.grade, gradePassSettings);
+      let status: GradeStatus;
 
-        const payload = {
-          studentId,
-          curriculumSubjectId: g.curriculumSubjectId,
-          status,
-          grade: g.grade ? g.grade : null,
-        };
-
-        if (
-          !isStaff &&
-          !payload.grade &&
-          existing?.status === 'FAILED'
-        ) {
-          continue;
-        }
-
-        if (existing) {
-          await tx.studentGrade.update({ where: { id: existing.id }, data: payload });
-        } else {
-          await tx.studentGrade.create({ data: payload });
-        }
-
-        if (status === 'PASSED') {
-          await tx.subjectRetake.updateMany({
-            where: {
-              studentId,
-              curriculumSubjectId: g.curriculumSubjectId,
-              status: 'CONFIRMED',
-            },
-            data: { status: 'COMPLETED' },
-          });
-        }
+      if (derivedStatus) {
+        status = derivedStatus;
+      } else if (isStaff) {
+        status = g.status;
+      } else {
+        status = existing?.status || 'PENDING';
       }
-    });
+
+      if (!isStaff && numericGrade === null && existing?.status === 'FAILED') {
+        continue;
+      }
+
+      upserts.push({
+        curriculumSubjectId: g.curriculumSubjectId,
+        status,
+        grade: numericGrade,
+      });
+
+      if (status === 'PASSED') {
+        passedSubjectIds.push(g.curriculumSubjectId);
+      }
+    }
+
+    // Avoid interactive $transaction: Neon pooler + Vercel latency times out the old N+1 loop.
+    if (upserts.length > 0) {
+      await Promise.all(
+        upserts.map((row) =>
+          db.studentGrade.upsert({
+            where: {
+              studentId_curriculumSubjectId: {
+                studentId,
+                curriculumSubjectId: row.curriculumSubjectId,
+              },
+            },
+            create: {
+              studentId,
+              curriculumSubjectId: row.curriculumSubjectId,
+              status: row.status,
+              grade: row.grade,
+            },
+            update: {
+              status: row.status,
+              grade: row.grade,
+            },
+          })
+        )
+      );
+    }
+
+    if (passedSubjectIds.length > 0) {
+      await db.subjectRetake.updateMany({
+        where: {
+          studentId,
+          curriculumSubjectId: { in: passedSubjectIds },
+          status: 'CONFIRMED',
+        },
+        data: { status: 'COMPLETED' },
+      });
+    }
 
     const student = await db.student.findUnique({
       where: { id: studentId },
@@ -1282,6 +1316,9 @@ export const saveStudentGrades = async (
     return { success: 'Grades saved' };
   } catch (error) {
     console.error('Save student grades error:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2028') {
+      return { error: 'Failed to save grades: the database timed out. Please try again.' };
+    }
     return { error: 'Failed to save grades' };
   }
 };
