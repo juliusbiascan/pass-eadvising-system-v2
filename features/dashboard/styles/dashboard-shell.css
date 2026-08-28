@@ -223,3 +223,41 @@
     animation: none;
   }
 }
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  .dashboard-shell,
+  .dashboard-shell * {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+  }
+
+  .dashboard-shell {
+    background: #fff !important;
+    color: #1a1617 !important;
+  }
+
+  .report-print-root .group\/section {
+    transform: none !important;
+  }
+
+  .report-letterhead {
+    break-inside: avoid;
+  }
+
+  .report-section > * {
+    break-inside: avoid;
+  }
+
+  .report-print-root table {
+    break-inside: auto;
+  }
+
+  .report-print-root tr {
+    break-inside: avoid;
+  }
+}

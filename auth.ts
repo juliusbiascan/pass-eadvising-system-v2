@@ -63,6 +63,7 @@ export const {
         session.user.image = token.image as string;
         session.user.isOAuth = token.isOAuth as boolean;
         session.user.role = token.role as string;
+        session.user.isRoot = token.isRoot as boolean;
         session.user.mustChangePassword = token.mustChangePassword as boolean;
       }
 
@@ -91,6 +92,7 @@ export const {
       token.email = existingUser.email;
       token.image = existingUser.image;
       token.role = existingUser.role;
+      token.isRoot = existingUser.isRoot;
       token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
       token.mustChangePassword = existingUser.mustChangePassword;
 

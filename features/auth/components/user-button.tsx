@@ -1,17 +1,15 @@
-"use client"
+"use client";
+
+import Link from "next/link";
+import { ChevronDown, KeyRound, LogOut, Settings, Users } from "lucide-react";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
-
-import {
-  Settings,
-  LogOut,
-  ChevronDown,
-} from "lucide-react"
-
+} from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,100 +18,150 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import { LogoutButton } from "./logout-button"
-import { cn } from "@/lib/utils"
-
-import { useCurrentUser } from "@/hooks/use-current-user"
+} from "@/components/ui/dropdown-menu";
+import { logout } from "@/actions/logout";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { cn } from "@/lib/utils";
 
 interface UserButtonProps {
   className?: string;
   variant?: "default" | "compact";
   settingsHref?: string;
+  teamsHref?: string;
 }
 
-export const UserButton = ({ className, variant = "default", settingsHref }: UserButtonProps) => {
+function getInitials(name?: string | null) {
+  if (!name?.trim()) return "U";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function getRoleLabel(role?: string, isRoot?: boolean) {
+  if (isRoot) return "Root";
+  if (role === "HEAD") return "Head";
+  if (role === "ADMIN") return "Admin";
+  if (role === "USER") return "Student";
+  return null;
+}
+
+export const UserButton = ({
+  className,
+  variant = "default",
+  settingsHref,
+  teamsHref,
+}: UserButtonProps) => {
   const user = useCurrentUser();
-  const router = useRouter();
+  const name = user?.name || "User";
+  const initials = getInitials(user?.name);
+  const roleLabel = getRoleLabel(user?.role, user?.isRoot);
+  const passwordHref =
+    user?.role === "USER"
+      ? "/default/change-password"
+      : "/dashboard/change-password";
+  const isCompact = variant === "compact";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
+          size={isCompact ? "icon-lg" : "lg"}
+          aria-label="Open account menu"
           className={cn(
-            "flex items-center gap-2 h-8 rounded-md transition-all",
-            // Mobile: Just avatar with minimal padding
-            "px-2 sm:px-3",
-            // Compact variant
-            variant === "compact" && "w-8 px-2 justify-center",
+            "rounded-full border-border/70 bg-card shadow-sm transition-all duration-300 hover:border-(--pass-gold)/50 hover:shadow-md",
+            !isCompact && "gap-2 px-2 sm:px-3",
             className
           )}
         >
-          <Avatar className="h-5 w-5 shrink-0">
-            <AvatarImage
-              src={user?.image || ""}
-              alt={user?.name || "User"}
-            />
-            <AvatarFallback className={cn("text-xs bg-white",)}>
-              {(user?.name || "U")[0].toUpperCase()}
+          <Avatar size="sm" className="size-5">
+            <AvatarImage src={user?.image || ""} alt="" />
+            <AvatarFallback className="bg-(--pass-gold)/15 text-[10px] font-semibold text-(--pass-cod) dark:text-(--pass-gold)">
+              {initials}
             </AvatarFallback>
           </Avatar>
-          {variant === "default" && (
+          {!isCompact ? (
             <>
-              {/* Hide name on mobile (< sm), show on tablet and up */}
-              <span className="hidden sm:inline text-sm font-medium truncate max-w-20 md:max-w-30">
-                {user?.name || "User"}
+              <span className="hidden max-w-24 truncate text-sm font-medium sm:inline md:max-w-32">
+                {name}
               </span>
-              {/* Hide chevron on mobile, show on desktop */}
-              <ChevronDown className="hidden md:block h-3 w-3 ml-1 shrink-0" />
+              <ChevronDown className="hidden size-3.5 shrink-0 opacity-60 md:block" />
             </>
-          )}
+          ) : null}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-56 max-w-[calc(100vw-2rem)]"
+        className="w-64 max-w-[calc(100vw-2rem)]"
         align="end"
-        forceMount
-        sideOffset={4}
+        sideOffset={6}
       >
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none truncate">
-              {user?.name || "User"}
-            </p>
-            <p className="text-xs leading-none text-muted-foreground truncate">
-              {user?.email}
-            </p>
+        <DropdownMenuLabel className="p-0 font-normal">
+          <div className="flex items-center gap-2.5 px-1.5 py-1.5">
+            <Avatar size="sm">
+              <AvatarImage src={user?.image || ""} alt="" />
+              <AvatarFallback className="bg-(--pass-gold)/15 text-xs font-semibold text-(--pass-cod) dark:text-(--pass-gold)">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="grid min-w-0 flex-1 gap-0.5">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-medium text-foreground">
+                  {name}
+                </span>
+                {roleLabel ? (
+                  <Badge className="border-transparent bg-(--pass-gold)/20 px-1.5 text-[10px] text-(--pass-cod) dark:text-(--pass-gold)">
+                    {roleLabel}
+                  </Badge>
+                ) : null}
+              </div>
+              {user?.email ? (
+                <span className="truncate text-xs font-normal text-muted-foreground">
+                  {user.email}
+                </span>
+              ) : null}
+            </div>
           </div>
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
 
-
-        {settingsHref && (
-          <>
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => router.push(settingsHref)}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-          </>
-        )}
-
-        <LogoutButton>
-          <DropdownMenuItem>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
+        <DropdownMenuGroup>
+          {settingsHref ? (
+            <DropdownMenuItem asChild>
+              <Link href={settingsHref}>
+                <Settings />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
+          {teamsHref ? (
+            <DropdownMenuItem asChild>
+              <Link href={teamsHref}>
+                <Users />
+                Teams
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem asChild>
+            <Link href={passwordHref}>
+              <KeyRound />
+              Change password
+            </Link>
           </DropdownMenuItem>
-        </LogoutButton>
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => {
+            void logout();
+          }}
+        >
+          <LogOut />
+          Log out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-
-}
+  );
+};

@@ -44,8 +44,10 @@ model User {
   image                 String?
   password              String?
   role                  UserRole               @default(USER)
+  isRoot                Boolean                @default(false) @map("is_root")
   isTwoFactorEnabled    Boolean                @default(false)
   mustChangePassword    Boolean                @default(false) @map("must_change_password")
+  createdAt             DateTime               @default(now()) @map("created_at")
   twoFactorConfirmation TwoFactorConfirmation?
   student               Student?
   head                  Head?

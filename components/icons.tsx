@@ -20,6 +20,7 @@ import {
   Trash,
   User,
   UserCog,
+  Users,
   X,
 } from 'lucide-react';
 
@@ -36,6 +37,7 @@ export const Icons = {
   bookOpen: BookOpen,
   student: User,
   head: UserCog,
+  team: Users,
   help: HelpCircle,
   order: CircleDollarSign,
   close: X,

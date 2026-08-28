@@ -7,6 +7,7 @@ import { ChevronRight } from 'lucide-react';
 const SEGMENT_LABELS: Record<string, string> = {
   dashboard: 'Overview',
   heads: 'Heads',
+  teams: 'Teams',
   students: 'Students',
   records: 'Records',
   curriculum: 'Curriculum',
@@ -23,6 +24,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   'assign-students': 'Assign students',
   prerequisites: 'Prerequisites',
   import: 'Import',
+  register: 'Register',
   'academic-years': 'Academic years',
   semesters: 'Semesters',
 };

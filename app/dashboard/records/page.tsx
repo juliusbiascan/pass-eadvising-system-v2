@@ -33,8 +33,9 @@ export default async function RecordManagementPage() {
               : ''}
             . Open a student to see every subject in their current curriculum,
             prior course records after a shift, edit grades for any term, and
-            review evaluation history. Heads evaluate the current term by date;
-            the registrar or admin then checks and approves by date.
+            review evaluation history. Heads can evaluate any term by date
+            (including transferee and irregular records); the registrar or
+            admin then checks and approves that same term by date.
           </p>
         </div>
         <RecordsTable data={data} canRegister={access.role === 'ADMIN'} />

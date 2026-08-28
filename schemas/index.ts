@@ -98,6 +98,8 @@ const ActionDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
 export const SubmitEvaluationSchema = z.object({
   studentId: z.string().min(1, { message: "Student is required" }),
   curriculumId: z.string().optional(),
+  /** Term being evaluated. Defaults to the student's current year/semester. */
+  yearLevel: z.number().int().min(1).max(6).optional(),
   semester: z.enum(SEMESTER_TERMS).optional(),
   completedByName: z.string().trim().min(2, {
     message: "Name of the person who evaluated this term is required",
@@ -118,6 +120,8 @@ export const SubmitEvaluationSchema = z.object({
 export const ApproveEvaluationSchema = z.object({
   studentId: z.string().min(1, { message: "Student is required" }),
   curriculumId: z.string().optional(),
+  /** Term being approved. Defaults to the student's current year/semester. */
+  yearLevel: z.number().int().min(1).max(6).optional(),
   semester: z.enum(SEMESTER_TERMS).optional(),
   approvedByName: z.string().trim().min(2, {
     message: "Name of the person who approved this evaluation is required",
@@ -132,6 +136,15 @@ export const ApproveEvaluationSchema = z.object({
     .optional(),
   confirmed: z.literal(true, {
     message: "Please confirm this approval before recording it",
+  }),
+});
+
+export const AdminRegistrationSchema = z.object({
+  fullName: z.string().min(3, {
+    message: "Full name must be at least 3 characters",
+  }),
+  email: z.string().email({
+    message: "Valid email is required",
   }),
 });
 

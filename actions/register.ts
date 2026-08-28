@@ -36,8 +36,9 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
       email: normalizedEmail,
       password: hashedPassword,
       role: "ADMIN",
+      isRoot: true,
       emailVerified: new Date(),
     },
   });
-  return { success: "Admin account created! You can now log in." };
+  return { success: "Root admin account created! You can now log in." };
 };

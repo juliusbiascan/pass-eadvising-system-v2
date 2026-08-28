@@ -1978,8 +1978,10 @@ export const UserScalarFieldEnum = {
   image: 'image',
   password: 'password',
   role: 'role',
+  isRoot: 'isRoot',
   isTwoFactorEnabled: 'isTwoFactorEnabled',
-  mustChangePassword: 'mustChangePassword'
+  mustChangePassword: 'mustChangePassword',
+  createdAt: 'createdAt'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]

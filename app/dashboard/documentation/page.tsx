@@ -5,7 +5,7 @@ import { DocumentationContent } from '@/features/dashboard/components/documentat
 export const metadata: Metadata = {
   title: 'Documentation',
   description:
-    'Admin and student guides — Records, curriculum import, evaluation rules, and portal workflows',
+    'Admin, head, and student guides — records, curriculum shift, evaluation, and portal workflows',
 };
 
 export default function DocumentationPage() {
@@ -15,9 +15,10 @@ export default function DocumentationPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Documentation</h2>
           <p className="text-sm text-muted-foreground max-w-3xl">
-            Guides for administrators and students using PASS e-Advising, including master
-            academic records (Records), Excel curriculum import, prerequisite rules, and
-            term evaluations. Official enrollment remains with the registrar.
+            Guides for administrators, department heads, and students using PASS e-Advising:
+            master academic records, curriculum shift, Excel import, prerequisite rules,
+            term evaluation and approval, and the student portal. Official enrollment remains
+            with the registrar.
           </p>
         </div>
         <DocumentationContent />

@@ -4,9 +4,33 @@ import { db } from '@/lib/db';
 import { parseEvaluationSnapshot } from '@/lib/evaluation';
 import { studentScopeWhere } from '@/lib/staff-access';
 
+import {
+  buildCurriculumAnalytics,
+  buildEvaluationAnalytics,
+  buildPerformanceAnalytics,
+  buildProgressAnalytics,
+} from './report-analytics';
+import type {
+  CurriculumReportRow,
+  EvaluationReportRow,
+  PerformanceReportRow,
+  ProgressReportRow,
+  ReportsBundle,
+} from './report-types';
+
 export type CourseScope = string[] | null;
 
-export async function getFullEvaluationReport(courseCodes: CourseScope = null) {
+function gradeScopeWhere(courseCodes: CourseScope) {
+  if (courseCodes === null) {
+    return {};
+  }
+
+  return { student: { course: { in: courseCodes } } };
+}
+
+export async function getFullEvaluationReport(
+  courseCodes: CourseScope = null
+): Promise<EvaluationReportRow[]> {
   const data = await db.evaluationResult.findMany({
     where:
       courseCodes === null
@@ -39,7 +63,6 @@ export async function getFullEvaluationReport(courseCodes: CourseScope = null) {
       },
     },
     orderBy: { updatedAt: 'desc' },
-    take: 50,
   });
 
   return data.map((record) => {
@@ -68,7 +91,9 @@ export async function getFullEvaluationReport(courseCodes: CourseScope = null) {
   });
 }
 
-export async function getCurriculumReport(courseCodes: CourseScope = null) {
+export async function getCurriculumReport(
+  courseCodes: CourseScope = null
+): Promise<CurriculumReportRow[]> {
   const curriculums = await db.curriculum.findMany({
     where:
       courseCodes === null ? undefined : { programCode: { in: courseCodes } },
@@ -111,7 +136,9 @@ export async function getCurriculumReport(courseCodes: CourseScope = null) {
   });
 }
 
-export async function getAcademicProgressReport(courseCodes: CourseScope = null) {
+export async function getAcademicProgressReport(
+  courseCodes: CourseScope = null
+): Promise<ProgressReportRow[]> {
   const students = await db.student.findMany({
     where: { curriculumId: { not: null }, ...studentScopeWhere(courseCodes) },
     select: {
@@ -179,4 +206,87 @@ export async function getAcademicProgressReport(courseCodes: CourseScope = null)
       latestEvaluationStatus: currentTermEvaluation?.status || 'PENDING',
     };
   });
+}
+
+export async function getSubjectPerformanceReport(
+  courseCodes: CourseScope = null
+): Promise<PerformanceReportRow[]> {
+  const grades = await db.studentGrade.findMany({
+    where: gradeScopeWhere(courseCodes),
+    select: {
+      status: true,
+      curriculumSubject: {
+        select: {
+          subject: {
+            select: {
+              code: true,
+              description: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const byCode = new Map<
+    string,
+    { description: string; failed: number; total: number }
+  >();
+
+  for (const grade of grades) {
+    const code = grade.curriculumSubject.subject.code;
+    const description = grade.curriculumSubject.subject.description;
+    const current = byCode.get(code) ?? { description, failed: 0, total: 0 };
+    current.total += 1;
+    if (grade.status === 'FAILED') {
+      current.failed += 1;
+    }
+    byCode.set(code, current);
+  }
+
+  return [...byCode.entries()]
+    .map(([subjectCode, value]) => ({
+      subjectCode,
+      subjectDescription: value.description,
+      failureCount: value.failed,
+      totalEnrolled: value.total,
+      failureRate: value.total > 0 ? (value.failed / value.total) * 100 : 0,
+    }))
+    .sort((a, b) => b.failureRate - a.failureRate || b.failureCount - a.failureCount);
+}
+
+export async function getReportsBundle(
+  courseCodes: CourseScope,
+  meta: { scopeLabel: string; roleLabel: string }
+): Promise<ReportsBundle> {
+  const [evaluations, curriculum, progress, performance] = await Promise.all([
+    getFullEvaluationReport(courseCodes),
+    getCurriculumReport(courseCodes),
+    getAcademicProgressReport(courseCodes),
+    getSubjectPerformanceReport(courseCodes),
+  ]);
+
+  return {
+    meta: {
+      generatedAt: new Date().toISOString(),
+      scopeLabel: meta.scopeLabel,
+      roleLabel: meta.roleLabel,
+    },
+    evaluations: {
+      rows: evaluations,
+      analytics: buildEvaluationAnalytics(evaluations),
+    },
+    curriculum: {
+      rows: curriculum,
+      analytics: buildCurriculumAnalytics(curriculum),
+    },
+    performance: {
+      rows: performance,
+      analytics: buildPerformanceAnalytics(performance),
+    },
+    progress: {
+      rows: progress,
+      analytics: buildProgressAnalytics(progress),
+    },
+  };
 }

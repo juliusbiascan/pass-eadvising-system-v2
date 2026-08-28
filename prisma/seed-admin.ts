@@ -6,6 +6,11 @@ async function main() {
   const password = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 
   const hashedPassword = await bcrypt.hash(password, 10);
+  const existingRoot = await db.user.findFirst({
+    where: { isRoot: true },
+    select: { email: true },
+  });
+  const shouldBeRoot = !existingRoot || existingRoot.email === email;
 
   const user = await db.user.upsert({
     where: { email },
@@ -14,12 +19,14 @@ async function main() {
       password: hashedPassword,
       role: "ADMIN",
       emailVerified: new Date(),
+      ...(shouldBeRoot ? { isRoot: true } : {}),
     },
     create: {
       email,
       name: "Admin",
       password: hashedPassword,
       role: "ADMIN",
+      isRoot: shouldBeRoot,
       emailVerified: new Date(),
     },
   });

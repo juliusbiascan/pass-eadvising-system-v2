@@ -17,12 +17,14 @@ type DashboardHeaderProps = {
   onMenuClick: () => void;
   className?: string;
   settingsHref?: string;
+  teamsHref?: string;
 };
 
 export function DashboardHeader({
   onMenuClick,
   className,
   settingsHref,
+  teamsHref,
 }: DashboardHeaderProps) {
   return (
     <header
@@ -53,10 +55,7 @@ export function DashboardHeader({
 
         <div className="ml-auto flex items-center gap-2">
           <ThemeModeToggle />
-          <UserButton
-            settingsHref={settingsHref}
-            className="h-9 rounded-full border-border/70 bg-card px-2 shadow-sm transition-all duration-300 hover:border-(--pass-gold)/50 hover:shadow-md sm:px-3"
-          />
+          <UserButton settingsHref={settingsHref} teamsHref={teamsHref} />
         </div>
       </div>
     </header>

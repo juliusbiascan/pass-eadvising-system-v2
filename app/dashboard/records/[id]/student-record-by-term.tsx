@@ -173,7 +173,8 @@ export default function StudentRecordByTerm({
               {yearGroup.semesters.map((semesterGroup) => {
                 const termKey = `${yearGroup.yearLevel}-${semesterGroup.semester}`;
                 const term = termByKey.get(termKey);
-                const isCurrentTerm = !readOnly && termKey === currentTermKey;
+                const canActOnTerm = !readOnly;
+                const isCurrentTerm = canActOnTerm && termKey === currentTermKey;
                 const items = semesterGroup.items;
                 const termLabel =
                   term?.label ??
@@ -348,7 +349,7 @@ export default function StudentRecordByTerm({
                           evaluatedByName={term?.evaluationCompletedByName}
                           evaluatedByPosition={term?.evaluationCompletedByPosition}
                           evaluatedAt={term?.evaluationSubmittedAt}
-                          showTermActions={isCurrentTerm}
+                          showTermActions={canActOnTerm}
                           layout="table"
                           showHelpText={false}
                           studentName={studentName}

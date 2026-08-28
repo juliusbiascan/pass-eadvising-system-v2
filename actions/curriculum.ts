@@ -1519,7 +1519,7 @@ export const submitStudentEvaluation = async (
   const termKey = {
     studentId: validated.data.studentId,
     curriculumId,
-    yearLevel: student.yearLevel,
+    yearLevel: validated.data.yearLevel ?? student.yearLevel,
     semester: validated.data.semester ?? student.currentSemester,
   };
 
@@ -1534,7 +1534,7 @@ export const submitStudentEvaluation = async (
   const evaluation = await evaluateStudent({
     studentId: validated.data.studentId,
     curriculumId,
-    yearLevel: student.yearLevel,
+    yearLevel: termKey.yearLevel,
     semester: termKey.semester,
   });
   if ('error' in evaluation) {
@@ -1605,7 +1605,7 @@ export const approveStudentEvaluation = async (
   const termKey = {
     studentId: validated.data.studentId,
     curriculumId,
-    yearLevel: student.yearLevel,
+    yearLevel: validated.data.yearLevel ?? student.yearLevel,
     semester: validated.data.semester ?? student.currentSemester,
   };
 

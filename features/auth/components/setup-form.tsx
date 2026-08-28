@@ -65,7 +65,7 @@ export const SetupForm = () => {
     >
       <div className="auth-scale-in mb-4 rounded-xl border border-(--pass-gold)/30 bg-(--pass-gold)/12 p-3 text-center">
         <p className="text-xs font-medium text-(--pass-cod) sm:text-sm dark:text-(--pass-gold)">
-          No users found yet. Create the first administrator account to get started.
+          No users found yet. Create the first root administrator account to get started.
         </p>
       </div>
       <form
@@ -141,7 +141,7 @@ export const SetupForm = () => {
           type="submit"
           className="auth-submit h-10 w-full text-sm sm:h-11 sm:text-base"
         >
-          Create Admin Account
+          Create Root Admin Account
         </Button>
       </form>
     </CardWrapper>

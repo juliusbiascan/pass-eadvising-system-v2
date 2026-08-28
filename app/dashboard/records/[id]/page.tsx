@@ -173,7 +173,10 @@ export default async function StudentRecordPage({ params }: PageProps) {
                 curriculum — including transferees who need credit for subjects taken
                 before their current term. Saving grades for a term marks that
                 term&apos;s evaluation as pending until the department head evaluates
-                and the registrar or admin approves it again.
+                that term and the registrar or admin approves it. Transferees and
+                irregular students can be evaluated and approved on every term,
+                not only the current one. Approval of a past term does not
+                advance the student&apos;s standing.
               </div>
 
               <ConfirmRetakesPanel

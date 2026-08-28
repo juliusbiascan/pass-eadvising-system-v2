@@ -302,6 +302,8 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
                 studentId={id}
                 curriculumId={curriculumId}
                 semester={currentSemester}
+                termYearLevel={student.yearLevel}
+                termSemester={currentSemester}
                 offerings={offeringData}
                 existingGrades={existingGrades}
                 isAdmin={isStaff}

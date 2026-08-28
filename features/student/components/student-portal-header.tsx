@@ -50,7 +50,7 @@ export function StudentPortalHeader({ student }: StudentPortalHeaderProps) {
             </p>
           </div>
           <ThemeModeToggle />
-          <UserButton className="h-9 rounded-full border-border/70 bg-card px-2 shadow-sm transition-all duration-300 hover:border-(--pass-gold)/50 hover:shadow-md sm:px-3" />
+          <UserButton />
         </div>
       </div>
     </header>

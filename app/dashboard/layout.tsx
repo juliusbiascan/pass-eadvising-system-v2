@@ -16,12 +16,14 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth();
   const role = session?.user?.role;
   const isHead = role === UserRole.HEAD;
+  const isRoot = Boolean(session?.user?.isRoot);
 
   return (
     <DashboardShell
       sidebarItems={getDashboardSidebarNav(role)}
-      roleLabel={isHead ? 'Head' : 'Admin'}
+      roleLabel={isHead ? 'Head' : isRoot ? 'Root' : 'Admin'}
       settingsHref={isHead ? undefined : '/dashboard/settings'}
+      teamsHref={role === UserRole.ADMIN ? '/dashboard/teams' : undefined}
     >
       <RoleGate allowedRole={[UserRole.ADMIN, UserRole.HEAD]}>
         <StaffPasswordGate>{children}</StaffPasswordGate>

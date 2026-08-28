@@ -20,6 +20,7 @@ type DashboardShellProps = {
   secondaryItems?: MainNavItem[];
   roleLabel?: string;
   settingsHref?: string;
+  teamsHref?: string;
 };
 
 export function DashboardShell({
@@ -28,6 +29,7 @@ export function DashboardShell({
   secondaryItems,
   roleLabel,
   settingsHref,
+  teamsHref,
 }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -35,10 +37,10 @@ export function DashboardShell({
   return (
     <ProgressBarProvider>
       <div className="dashboard-shell relative min-h-svh bg-background text-foreground">
-        <div className="dashboard-accent-bar sticky top-0 z-50" aria-hidden />
+        <div className="dashboard-accent-bar sticky top-0 z-50 print:hidden" aria-hidden />
 
-        <div className="lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]">
-          <aside className="dashboard-sidebar-enter relative hidden overflow-hidden border-r border-(--pass-sidebar-border) bg-(--pass-sidebar-bg) text-(--pass-sidebar-fg) transition-colors duration-300 lg:sticky lg:top-[3px] lg:z-30 lg:block lg:h-[calc(100svh-3px)]">
+        <div className="lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] print:block">
+          <aside className="dashboard-sidebar-enter relative hidden overflow-hidden border-r border-(--pass-sidebar-border) bg-(--pass-sidebar-bg) text-(--pass-sidebar-fg) transition-colors duration-300 lg:sticky lg:top-[3px] lg:z-30 lg:block lg:h-[calc(100svh-3px)] print:hidden">
             <div
               className="dashboard-orb pointer-events-none absolute -top-16 -left-10 size-44 rounded-full bg-(--pass-sidebar-orb-a) blur-3xl"
               aria-hidden
@@ -60,6 +62,8 @@ export function DashboardShell({
             <DashboardHeader
               onMenuClick={() => setMobileOpen(true)}
               settingsHref={settingsHref}
+              teamsHref={teamsHref}
+              className="print:hidden"
             />
 
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -91,7 +95,7 @@ export function DashboardShell({
             <main
               key={pathname}
               className={cn(
-                'dashboard-page-enter flex-1 py-6 lg:py-8',
+                'dashboard-page-enter flex-1 py-6 lg:py-8 print:px-6 print:py-0',
                 dashboardContentPadding
               )}
             >

@@ -86,9 +86,9 @@ export function DocumentationContent() {
       </Accordion>
 
       <p className="text-xs text-muted-foreground">
-        Covers implemented modules: dashboard, students, records, curriculum import,
-        reports, terms, settings, student portal, and evaluation engine. Product scope
-        is defined in{' '}
+        Covers implemented modules: dashboard, students, records, curriculum shift,
+        heads, courses, curriculum import, reports, terms, settings, student portal,
+        retakes, and evaluation engine. Product scope is defined in{' '}
         <Badge variant="outline" className="mx-1">
           prd.md
         </Badge>

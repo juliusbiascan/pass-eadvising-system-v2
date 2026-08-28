@@ -32,8 +32,10 @@ export type UserMinAggregateOutputType = {
   image: string | null
   password: string | null
   role: $Enums.UserRole | null
+  isRoot: boolean | null
   isTwoFactorEnabled: boolean | null
   mustChangePassword: boolean | null
+  createdAt: Date | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -44,8 +46,10 @@ export type UserMaxAggregateOutputType = {
   image: string | null
   password: string | null
   role: $Enums.UserRole | null
+  isRoot: boolean | null
   isTwoFactorEnabled: boolean | null
   mustChangePassword: boolean | null
+  createdAt: Date | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -56,8 +60,10 @@ export type UserCountAggregateOutputType = {
   image: number
   password: number
   role: number
+  isRoot: number
   isTwoFactorEnabled: number
   mustChangePassword: number
+  createdAt: number
   _all: number
 }
 
@@ -70,8 +76,10 @@ export type UserMinAggregateInputType = {
   image?: true
   password?: true
   role?: true
+  isRoot?: true
   isTwoFactorEnabled?: true
   mustChangePassword?: true
+  createdAt?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -82,8 +90,10 @@ export type UserMaxAggregateInputType = {
   image?: true
   password?: true
   role?: true
+  isRoot?: true
   isTwoFactorEnabled?: true
   mustChangePassword?: true
+  createdAt?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -94,8 +104,10 @@ export type UserCountAggregateInputType = {
   image?: true
   password?: true
   role?: true
+  isRoot?: true
   isTwoFactorEnabled?: true
   mustChangePassword?: true
+  createdAt?: true
   _all?: true
 }
 
@@ -179,8 +191,10 @@ export type UserGroupByOutputType = {
   image: string | null
   password: string | null
   role: $Enums.UserRole
+  isRoot: boolean
   isTwoFactorEnabled: boolean
   mustChangePassword: boolean
+  createdAt: Date
   _count: UserCountAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
@@ -212,8 +226,10 @@ export type UserWhereInput = {
   image?: Prisma.StringNullableFilter<"User"> | string | null
   password?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
+  isRoot?: Prisma.BoolFilter<"User"> | boolean
   isTwoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
   mustChangePassword?: Prisma.BoolFilter<"User"> | boolean
+  createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   twoFactorConfirmation?: Prisma.XOR<Prisma.TwoFactorConfirmationNullableScalarRelationFilter, Prisma.TwoFactorConfirmationWhereInput> | null
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
   head?: Prisma.XOR<Prisma.HeadNullableScalarRelationFilter, Prisma.HeadWhereInput> | null
@@ -229,8 +245,10 @@ export type UserOrderByWithRelationInput = {
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   password?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  isRoot?: Prisma.SortOrder
   isTwoFactorEnabled?: Prisma.SortOrder
   mustChangePassword?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationOrderByWithRelationInput
   student?: Prisma.StudentOrderByWithRelationInput
   head?: Prisma.HeadOrderByWithRelationInput
@@ -249,8 +267,10 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   image?: Prisma.StringNullableFilter<"User"> | string | null
   password?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
+  isRoot?: Prisma.BoolFilter<"User"> | boolean
   isTwoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
   mustChangePassword?: Prisma.BoolFilter<"User"> | boolean
+  createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   twoFactorConfirmation?: Prisma.XOR<Prisma.TwoFactorConfirmationNullableScalarRelationFilter, Prisma.TwoFactorConfirmationWhereInput> | null
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
   head?: Prisma.XOR<Prisma.HeadNullableScalarRelationFilter, Prisma.HeadWhereInput> | null
@@ -266,8 +286,10 @@ export type UserOrderByWithAggregationInput = {
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   password?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  isRoot?: Prisma.SortOrder
   isTwoFactorEnabled?: Prisma.SortOrder
   mustChangePassword?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
@@ -284,8 +306,10 @@ export type UserScalarWhereWithAggregatesInput = {
   image?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   password?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleWithAggregatesFilter<"User"> | $Enums.UserRole
+  isRoot?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   isTwoFactorEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   mustChangePassword?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
 
 export type UserCreateInput = {
@@ -296,8 +320,10 @@ export type UserCreateInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   head?: Prisma.HeadCreateNestedOneWithoutUserInput
@@ -313,8 +339,10 @@ export type UserUncheckedCreateInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   head?: Prisma.HeadUncheckedCreateNestedOneWithoutUserInput
@@ -330,8 +358,10 @@ export type UserUpdateInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUpdateOneWithoutUserNestedInput
@@ -347,8 +377,10 @@ export type UserUncheckedUpdateInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUncheckedUpdateOneWithoutUserNestedInput
@@ -364,8 +396,10 @@ export type UserCreateManyInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
 }
 
 export type UserUpdateManyMutationInput = {
@@ -376,8 +410,10 @@ export type UserUpdateManyMutationInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -388,8 +424,10 @@ export type UserUncheckedUpdateManyInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type UserScalarRelationFilter = {
@@ -405,8 +443,10 @@ export type UserCountOrderByAggregateInput = {
   image?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  isRoot?: Prisma.SortOrder
   isTwoFactorEnabled?: Prisma.SortOrder
   mustChangePassword?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -417,8 +457,10 @@ export type UserMaxOrderByAggregateInput = {
   image?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  isRoot?: Prisma.SortOrder
   isTwoFactorEnabled?: Prisma.SortOrder
   mustChangePassword?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -429,8 +471,10 @@ export type UserMinOrderByAggregateInput = {
   image?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  isRoot?: Prisma.SortOrder
   isTwoFactorEnabled?: Prisma.SortOrder
   mustChangePassword?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type UserCreateNestedOneWithoutAccountsInput = {
@@ -523,8 +567,10 @@ export type UserCreateWithoutAccountsInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   head?: Prisma.HeadCreateNestedOneWithoutUserInput
@@ -539,8 +585,10 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   head?: Prisma.HeadUncheckedCreateNestedOneWithoutUserInput
@@ -571,8 +619,10 @@ export type UserUpdateWithoutAccountsInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUpdateOneWithoutUserNestedInput
@@ -587,8 +637,10 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUncheckedUpdateOneWithoutUserNestedInput
@@ -603,8 +655,10 @@ export type UserCreateWithoutSessionsInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   head?: Prisma.HeadCreateNestedOneWithoutUserInput
@@ -619,8 +673,10 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   head?: Prisma.HeadUncheckedCreateNestedOneWithoutUserInput
@@ -651,8 +707,10 @@ export type UserUpdateWithoutSessionsInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUpdateOneWithoutUserNestedInput
@@ -667,8 +725,10 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUncheckedUpdateOneWithoutUserNestedInput
@@ -683,8 +743,10 @@ export type UserCreateWithoutStudentInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationCreateNestedOneWithoutUserInput
   head?: Prisma.HeadCreateNestedOneWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -699,8 +761,10 @@ export type UserUncheckedCreateWithoutStudentInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedCreateNestedOneWithoutUserInput
   head?: Prisma.HeadUncheckedCreateNestedOneWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -731,8 +795,10 @@ export type UserUpdateWithoutStudentInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUpdateOneWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -747,8 +813,10 @@ export type UserUncheckedUpdateWithoutStudentInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUncheckedUpdateOneWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -763,8 +831,10 @@ export type UserCreateWithoutHeadInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -779,8 +849,10 @@ export type UserUncheckedCreateWithoutHeadInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -811,8 +883,10 @@ export type UserUpdateWithoutHeadInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -827,8 +901,10 @@ export type UserUncheckedUpdateWithoutHeadInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   twoFactorConfirmation?: Prisma.TwoFactorConfirmationUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -843,8 +919,10 @@ export type UserCreateWithoutTwoFactorConfirmationInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   head?: Prisma.HeadCreateNestedOneWithoutUserInput
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -859,8 +937,10 @@ export type UserUncheckedCreateWithoutTwoFactorConfirmationInput = {
   image?: string | null
   password?: string | null
   role?: $Enums.UserRole
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: Date | string
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   head?: Prisma.HeadUncheckedCreateNestedOneWithoutUserInput
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -891,8 +971,10 @@ export type UserUpdateWithoutTwoFactorConfirmationInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUpdateOneWithoutUserNestedInput
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -907,8 +989,10 @@ export type UserUncheckedUpdateWithoutTwoFactorConfirmationInput = {
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  isRoot?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   head?: Prisma.HeadUncheckedUpdateOneWithoutUserNestedInput
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -963,8 +1047,10 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   image?: boolean
   password?: boolean
   role?: boolean
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: boolean
   twoFactorConfirmation?: boolean | Prisma.User$twoFactorConfirmationArgs<ExtArgs>
   student?: boolean | Prisma.User$studentArgs<ExtArgs>
   head?: boolean | Prisma.User$headArgs<ExtArgs>
@@ -981,8 +1067,10 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   image?: boolean
   password?: boolean
   role?: boolean
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -993,8 +1081,10 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   image?: boolean
   password?: boolean
   role?: boolean
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
@@ -1005,11 +1095,13 @@ export type UserSelectScalar = {
   image?: boolean
   password?: boolean
   role?: boolean
+  isRoot?: boolean
   isTwoFactorEnabled?: boolean
   mustChangePassword?: boolean
+  createdAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "role" | "isTwoFactorEnabled" | "mustChangePassword", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "role" | "isRoot" | "isTwoFactorEnabled" | "mustChangePassword" | "createdAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   twoFactorConfirmation?: boolean | Prisma.User$twoFactorConfirmationArgs<ExtArgs>
   student?: boolean | Prisma.User$studentArgs<ExtArgs>
@@ -1038,8 +1130,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     image: string | null
     password: string | null
     role: $Enums.UserRole
+    isRoot: boolean
     isTwoFactorEnabled: boolean
     mustChangePassword: boolean
+    createdAt: Date
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -1475,8 +1569,10 @@ export interface UserFieldRefs {
   readonly image: Prisma.FieldRef<"User", 'String'>
   readonly password: Prisma.FieldRef<"User", 'String'>
   readonly role: Prisma.FieldRef<"User", 'UserRole'>
+  readonly isRoot: Prisma.FieldRef<"User", 'Boolean'>
   readonly isTwoFactorEnabled: Prisma.FieldRef<"User", 'Boolean'>
   readonly mustChangePassword: Prisma.FieldRef<"User", 'Boolean'>
+  readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
 }
     
 

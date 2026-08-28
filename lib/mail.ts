@@ -320,6 +320,47 @@ export const sendHeadCredentialsEmail = async (
   });
 };
 
+export const sendAdminCredentialsEmail = async (
+  email: string,
+  fullName: string,
+  temporaryPassword: string
+) => {
+  const loginLink = `${domain}/auth/login`;
+  const firstName = escapeHtml(firstNameFrom(fullName));
+  const safeEmail = escapeHtml(email);
+  const safePassword = escapeHtml(temporaryPassword);
+
+  const content = `
+    <p style="margin:0 0 16px 0">Hi ${firstName}, an administrator created your ${productName} admin account. Use the details below to sign in.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;background:${colors.iron};border-radius:12px">
+      <tr>
+        <td style="padding:16px 18px">
+          <p style="margin:0 0 4px 0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${colors.muted}">Email</p>
+          <p style="margin:0 0 14px 0;font-size:15px;color:${colors.charcoal}">${safeEmail}</p>
+          <p style="margin:0 0 4px 0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${colors.muted}">Temporary password</p>
+          <p style="margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:16px;font-weight:700;color:${colors.red}">${safePassword}</p>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0;font-size:14px;color:${colors.muted}">Sign in with this temporary password. You will be required to choose a new password before you can use the dashboard. Do not share it with anyone.</p>
+    ${fallbackLink(loginLink)}
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: `Your ${brandName} administrator account is ready`,
+    text: `Hi ${firstNameFrom(fullName)}, your ${brandName} ${productName} administrator account is ready.\n\nEmail: ${email}\nTemporary password: ${temporaryPassword}\n\nSign in here: ${loginLink}\n\nYou must change this password before you can use the dashboard.`,
+    html: emailLayout({
+      preheader: "Your administrator account is ready. Sign in and set a new password.",
+      eyebrow: `${brandName} · Administrator`,
+      title: "Your account is ready",
+      content,
+      buttonText: "Open dashboard",
+      buttonHref: loginLink,
+    }),
+  });
+};
+
 export const sendGradeSubmissionCopyEmail = async ({
   to,
   studentName,

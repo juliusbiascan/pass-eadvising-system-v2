@@ -126,7 +126,7 @@ interface GradeFormProps {
   evaluatedByName?: string | null;
   evaluatedByPosition?: string | null;
   evaluatedAt?: Date | string | null;
-  /** When false, hides evaluate/approve actions (e.g. past terms in Record Management). */
+  /** When false, hides evaluate/approve actions (e.g. prior-curriculum history). */
   showTermActions?: boolean;
   /** Table layout matches curriculum subject grouping; cards for compact evaluate view. */
   layout?: "cards" | "table";
@@ -233,20 +233,22 @@ export default function GradeForm({
     setSuccess("");
 
     startTransition(() => {
+      const termPayload = {
+        studentId,
+        curriculumId,
+        yearLevel: termYearLevel,
+        semester: termSemester ?? semester,
+      };
       const request = canApprove
         ? approveStudentEvaluation({
-            studentId,
-            curriculumId,
-            semester,
+            ...termPayload,
             approvedByName: payload.completedByName,
             actionDate: payload.actionDate,
             remarks: payload.remarks,
             confirmed: payload.confirmed,
           })
         : submitStudentEvaluation({
-            studentId,
-            curriculumId,
-            semester,
+            ...termPayload,
             completedByName: payload.completedByName,
             actionDate: payload.actionDate,
             remarks: payload.remarks,
