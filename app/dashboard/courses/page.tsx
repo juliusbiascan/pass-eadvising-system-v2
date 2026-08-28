@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { DEFAULT_COURSES } from "@/lib/courses";
 import { db } from "@/lib/db";
 
 import CoursesManager from "./courses-manager";
@@ -48,7 +49,13 @@ export default async function CoursesPage() {
             </p>
           </div>
         </div>
-        <CoursesManager courses={data} />
+        <CoursesManager
+          courses={data}
+          templateCourses={DEFAULT_COURSES.map((course) => ({
+            code: course.code,
+            title: course.title,
+          }))}
+        />
       </div>
     </div>
   );

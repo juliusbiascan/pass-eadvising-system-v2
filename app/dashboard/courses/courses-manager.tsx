@@ -2,10 +2,23 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { GraduationCap, MoreHorizontal, Plus } from "lucide-react";
 
-import { createCourse, deleteCourse, updateCourse } from "@/actions/course";
+import {
+  createCourse,
+  deleteCourse,
+  loadInitialCourses,
+  updateCourse,
+} from "@/actions/course";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +74,11 @@ export type CourseRecord = {
   createdAt: Date;
 };
 
+export type CourseTemplate = {
+  code: string;
+  title: string;
+};
+
 type CourseFormState = {
   code: string;
   title: string;
@@ -75,9 +93,10 @@ const emptyForm: CourseFormState = {
 
 interface CoursesManagerProps {
   courses: CourseRecord[];
+  templateCourses: CourseTemplate[];
 }
 
-const CoursesManager = ({ courses }: CoursesManagerProps) => {
+const CoursesManager = ({ courses, templateCourses }: CoursesManagerProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [createOpen, setCreateOpen] = useState(false);
@@ -129,6 +148,20 @@ const CoursesManager = ({ courses }: CoursesManagerProps) => {
         }
         setSuccess(result?.success || "Course updated");
         setEditing(null);
+        router.refresh();
+      });
+    });
+  };
+
+  const handleLoadInitial = () => {
+    resetMessages();
+    startTransition(() => {
+      loadInitialCourses().then((result) => {
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+        setSuccess(result?.success || "Initial courses loaded");
         router.refresh();
       });
     });
@@ -248,27 +281,58 @@ const CoursesManager = ({ courses }: CoursesManagerProps) => {
       <FormError message={createOpen || editing ? undefined : error} />
       <FormSuccess message={success} />
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Curriculums</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {courses.length === 0 ? (
+      {courses.length === 0 ? (
+        <div className="rounded-xl border border-dashed">
+          <Empty className="py-10">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <GraduationCap />
+              </EmptyMedia>
+              <EmptyTitle>No courses yet</EmptyTitle>
+              <EmptyDescription>
+                Load the initial degree programs template, or add a course
+                manually.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent className="max-w-xl">
+              <div className="w-full overflow-hidden rounded-md border text-left">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Title</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {templateCourses.map((course) => (
+                      <TableRow key={course.code}>
+                        <TableCell className="font-medium">{course.code}</TableCell>
+                        <TableCell>{course.title}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <Button onClick={handleLoadInitial} disabled={isPending}>
+                {isPending ? "Loading..." : "Load initial courses"}
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No courses yet. Add BSCS, BSA, or any other program offered by the
-                  college.
-                </TableCell>
+                <TableHead>Code</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Curriculums</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-12" />
               </TableRow>
-            ) : (
-              courses.map((course) => (
+            </TableHeader>
+            <TableBody>
+              {courses.map((course) => (
                 <TableRow key={course.id}>
                   <TableCell className="font-medium">{course.code}</TableCell>
                   <TableCell>{course.title}</TableCell>
@@ -301,11 +365,11 @@ const CoursesManager = ({ courses }: CoursesManagerProps) => {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <Dialog
         open={Boolean(editing)}

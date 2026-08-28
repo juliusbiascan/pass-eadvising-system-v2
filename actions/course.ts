@@ -4,6 +4,7 @@ import * as z from "zod";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
+import { DEFAULT_COURSES } from "@/lib/courses";
 import { db } from "@/lib/db";
 import { CreateCourseSchema, UpdateCourseSchema } from "@/schemas";
 
@@ -110,6 +111,37 @@ export const updateCourse = async (values: z.infer<typeof UpdateCourseSchema>) =
   } catch (error) {
     console.error("Update course error:", error);
     return { error: "A course with this code already exists" };
+  }
+};
+
+export const loadInitialCourses = async () => {
+  if (!(await ensureAdmin())) {
+    return { error: "Unauthorized" };
+  }
+
+  const existingCount = await db.course.count();
+  if (existingCount > 0) {
+    return {
+      error: "Courses already exist. Add remaining programs individually.",
+    };
+  }
+
+  try {
+    await db.course.createMany({
+      data: DEFAULT_COURSES.map((course) => ({
+        code: course.code,
+        title: course.title,
+        isActive: true,
+      })),
+    });
+
+    revalidateCoursePaths();
+    return {
+      success: `Loaded ${DEFAULT_COURSES.length} initial courses`,
+    };
+  } catch (error) {
+    console.error("Load initial courses error:", error);
+    return { error: "Failed to load initial courses" };
   }
 };
 
