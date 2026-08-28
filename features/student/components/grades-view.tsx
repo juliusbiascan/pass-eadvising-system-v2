@@ -1,15 +1,30 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Clock } from 'lucide-react';
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { Clock, Undo2 } from 'lucide-react';
 
+import { FormError } from '@/components/form-error';
+import { FormSuccess } from '@/components/form-success';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { isEvaluationApproved } from '@/lib/evaluation';
+import { isEvaluationApproved, isEvaluationEvaluated } from '@/lib/evaluation';
 import type { EvaluationStatus } from '@/app/generated/prisma/enums';
 import type { GradePassSettings } from '@/lib/grade-evaluation';
 import type { SemesterTermValue } from '@/lib/semester-terms';
 
+import { cancelGradeSubmission } from '../actions/cancel-grade-submission';
 import { GradeSubmissionForm } from './grade-submission-form';
 import { RetakeRequestForm } from './retake-request-form';
 import StudentEvaluationForm from './student-evaluation-form';
@@ -70,9 +85,14 @@ export function GradesView({
   deferredSubjects,
   gradeCounts,
 }: GradesViewProps) {
+  const router = useRouter();
   const [submittedGrades, setSubmittedGrades] = useState<Record<string, ExistingGrade> | null>(
     null
   );
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [error, setError] = useState<string | undefined>('');
+  const [success, setSuccess] = useState<string | undefined>('');
+  const [isPending, startTransition] = useTransition();
 
   const formOfferings = useMemo(
     () => [...retakeOfferings, ...offerings],
@@ -80,6 +100,27 @@ export function GradesView({
   );
 
   const gradesLocked = hasSubmittedTermGrades || submittedGrades !== null;
+  const canCancelSubmission = gradesLocked && !isEvaluationEvaluated(evaluationStatus);
+
+  const handleCancelSubmission = () => {
+    setError('');
+    setSuccess('');
+    startTransition(() => {
+      cancelGradeSubmission().then((result) => {
+        setCancelOpen(false);
+
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+
+        setSubmittedGrades(null);
+        setSuccess(result?.success || 'Submission cancelled. You can edit your grades.');
+        router.refresh();
+      });
+    });
+  };
+
   const gradesForSlip = useMemo(
     () =>
       submittedGrades ? { ...existingGrades, ...submittedGrades } : existingGrades,
@@ -113,6 +154,8 @@ export function GradesView({
   if (gradesLocked) {
     return (
       <div className="space-y-6">
+        <FormError message={error} />
+        <FormSuccess message={success} />
         <Alert className="border-(--pass-gold)/40 bg-(--pass-gold)/10">
           <Clock />
           <AlertTitle className="text-pretty">
@@ -127,9 +170,55 @@ export function GradesView({
               ? 'The registrar or admin has approved this term. You can print, download, or email the form below.'
               : evaluationStatus === 'EVALUATED'
                 ? 'Print, download, or email the form below while the registrar or admin checks and approves your evaluation.'
-                : 'Grade entry is closed for this term. Print or submit the grade slip to the registrar. Your department head will evaluate by date, then the registrar or admin will check and approve.'}
+                : 'Grade entry is closed for this term. Print or submit the grade slip to the registrar. Cancel the submission if you need to edit grades before your department head evaluates.'}
           </AlertDescription>
         </Alert>
+
+        {canCancelSubmission ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full touch-manipulation sm:h-9 sm:w-auto"
+            onClick={() => {
+              setError('');
+              setCancelOpen(true);
+            }}
+            disabled={isPending}
+          >
+            <Undo2 />
+            Cancel submission
+          </Button>
+        ) : null}
+
+        <AlertDialog
+          open={cancelOpen}
+          onOpenChange={(open) => {
+            if (isPending) return;
+            setCancelOpen(open);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel this submission?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You can edit your grades and submit again. This does not delete the grades you
+                already entered. You cannot cancel after your department head evaluates this term.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isPending}>Keep submission</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(event) => {
+                  event.preventDefault();
+                  handleCancelSubmission();
+                }}
+                disabled={isPending}
+              >
+                {isPending ? 'Cancelling...' : 'Cancel submission'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <GradeSubmissionForm
           student={student}
@@ -183,6 +272,7 @@ export function GradesView({
 
   return (
     <div className="space-y-6">
+      <FormSuccess message={success} />
       <StudentEvaluationForm
         studentId={studentId}
         curriculumId={curriculumId}

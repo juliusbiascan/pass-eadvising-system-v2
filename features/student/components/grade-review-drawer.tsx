@@ -53,8 +53,8 @@ export function GradeReviewDrawer({
         <DrawerHeader className="text-left">
           <DrawerTitle>Review your grades</DrawerTitle>
           <DrawerDescription>
-            Check each grade before you submit. After submitting, you cannot change them until an
-            administrator reviews your request.
+            Check each grade before you submit. After submitting, grade entry is closed until you
+            cancel the submission or an administrator evaluates your request.
           </DrawerDescription>
         </DrawerHeader>
 

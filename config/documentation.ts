@@ -276,7 +276,8 @@ export const documentationSections: DocSection[] = [
           'Enter numeric grades per subject for the active term. Approved retake subjects appear here marked Retake.',
           'If you fail a subject, print the Request to Retake Subject form and submit it to an administrator.',
           'Save your grades; the system applies pass/fail rules when grades are numeric.',
-          'After saving, print or submit the grade slip to the registrar. Your department head evaluates by date, then the registrar or admin checks and approves by date.',
+          'After saving, print or submit the grade slip to the registrar. Cancel the submission if you need to edit grades before your department head evaluates.',
+          'Your department head evaluates by date, then the registrar or admin checks and approves by date.',
         ],
       },
       {

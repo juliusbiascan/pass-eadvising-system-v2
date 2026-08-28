@@ -254,7 +254,7 @@ export default function StudentEvaluationForm({
                 ? 'Your evaluation for this term is approved. Review and submit new grades only if you need to send it back for evaluation.'
                 : evaluationStatus === 'EVALUATED'
                   ? 'Your department head has evaluated this term. Submit the grade slip to the registrar if you have not already. The registrar or admin will check and approve it.'
-                  : 'Review your grades before saving. After you save, print or submit the grade slip to the registrar. Your department head will evaluate, then the registrar or admin will approve.'}
+                  : 'Review your grades before saving. After you save, print or submit the grade slip to the registrar. You can cancel the submission if you need to edit before your department head evaluates.'}
             </AlertDescription>
           </Alert>
 

@@ -72,7 +72,7 @@ export type StudentPortalData = {
     gaps: PriorTermGap[];
   };
   existingGrades: Record<string, ExistingGrade>;
-  /** True after the student saves term grades (evaluation record exists or grades were entered). */
+  /** True after the student submits term grades (a current-term evaluation record exists). */
   hasSubmittedTermGrades: boolean;
   displayEvaluation: {
     status: EvaluationStatus;

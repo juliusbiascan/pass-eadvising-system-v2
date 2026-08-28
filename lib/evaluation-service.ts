@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import type { SemesterTerm, UserRole } from '@/app/generated/prisma/enums';
 import {
   buildEvaluationSnapshot,
+  isEvaluationEvaluated,
   parseEvaluationSnapshot,
   serializeEvaluationSnapshot,
   type EvaluationApprovalRecord,
@@ -104,6 +105,20 @@ export async function markTermEvaluationPending(key: TermEvaluationKey): Promise
       approvedBy: null,
     },
   });
+}
+
+/** Removes a pending term evaluation so the student can edit and resubmit grades. */
+export async function deletePendingTermEvaluation(key: TermEvaluationKey): Promise<boolean> {
+  const existing = await getTermEvaluationRecord(key);
+  if (!existing || isEvaluationEvaluated(existing.status)) {
+    return false;
+  }
+
+  await db.evaluationResult.delete({
+    where: { id: existing.id },
+  });
+
+  return true;
 }
 
 export async function saveTermEvaluationEvaluated(

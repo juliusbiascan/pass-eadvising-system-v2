@@ -271,9 +271,7 @@ export async function getStudentPortalData(): Promise<
     maxYearLevel,
     priorTermGaps,
     existingGrades,
-    hasSubmittedTermGrades:
-      storedEvaluation !== null ||
-      activeOfferingData.some((offering) => Boolean(existingGrades[offering.id]?.grade?.trim())),
+    hasSubmittedTermGrades: storedEvaluation !== null,
     displayEvaluation: {
       status: displayEvaluation.status,
       submittedAt: displayEvaluation.submittedAt,
