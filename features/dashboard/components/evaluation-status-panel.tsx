@@ -23,6 +23,7 @@ interface EvaluationStatusPanelProps {
   approvalRemarks?: string | null;
   yearLevel: number;
   semester: string;
+  termLabel?: string;
   isStoredResult?: boolean;
   isStudentView?: boolean;
 }
@@ -39,6 +40,7 @@ export function EvaluationStatusPanel({
   approvalRemarks,
   yearLevel,
   semester,
+  termLabel,
   isStoredResult = false,
   isStudentView = false,
 }: EvaluationStatusPanelProps) {
@@ -52,7 +54,7 @@ export function EvaluationStatusPanel({
         <EvaluationStatusBadge status={status} />
       </div>
       <p className="mt-2 text-muted-foreground">
-        Term: {formatYearLevelLabel(yearLevel)} • {formatSemesterLabel(semester)}
+        Term: {termLabel || `${formatYearLevelLabel(yearLevel)} • ${formatSemesterLabel(semester)}`}
       </p>
       {isEvaluationEvaluated(status) ? (
         <div className="mt-1 space-y-1 text-muted-foreground">

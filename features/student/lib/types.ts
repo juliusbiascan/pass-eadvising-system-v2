@@ -39,6 +39,8 @@ export type StudentPortalStudent = {
   yearLevel: number;
   currentSemester: string;
   email: string | null;
+  isMakeupStanding?: boolean;
+  isProgramComplete?: boolean;
 };
 
 export type PriorTermGap = {
@@ -67,6 +69,8 @@ export type StudentPortalData = {
   /** Failed subjects plus unfinished subjects from an earlier term. */
   deferredSubjects: CurriculumItem[];
   maxYearLevel: number;
+  isMakeupStanding: boolean;
+  isProgramComplete: boolean;
   priorTermGaps: {
     hasGap: boolean;
     gaps: PriorTermGap[];

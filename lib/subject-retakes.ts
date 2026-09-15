@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import type { SemesterTerm } from '@/app/generated/prisma/enums';
 
 import {
+  compareTerms,
   isPriorTerm,
   type FailedSubjectRetakeRow,
   type RetakeScheduleValue,
@@ -22,7 +23,9 @@ export {
   formatRetakeScheduleLabel,
   formatSubjectScheduleReason,
   formatTermRef,
+  isMakeupStanding,
   isPriorTerm,
+  nextTermUnbounded,
   resolveRetakeTargetTerm,
 } from './subject-retake-helpers';
 
@@ -50,7 +53,7 @@ export async function listConfirmedRetakeOfferings(
   const retakes = await db.subjectRetake.findMany({
     where: {
       studentId,
-      status: 'CONFIRMED',
+      status: { in: ['CONFIRMED', 'COMPLETED'] },
       targetYearLevel: yearLevel,
       targetSemester: semester,
     },
@@ -109,7 +112,7 @@ export async function listFailedSubjectsForRetake(
     semester: student.currentSemester,
   };
 
-  const [offerings, grades, retakes] = await Promise.all([
+  const [offerings, grades, retakes, currentEval] = await Promise.all([
     db.curriculumSubject.findMany({
       where: { curriculumId: student.curriculumId },
       include: {
@@ -137,6 +140,17 @@ export async function listFailedSubjectsForRetake(
     db.subjectRetake.findMany({
       where: { studentId },
     }),
+    db.evaluationResult.findUnique({
+      where: {
+        studentId_curriculumId_yearLevel_semester: {
+          studentId,
+          curriculumId: student.curriculumId,
+          yearLevel: student.yearLevel,
+          semester: student.currentSemester,
+        },
+      },
+      select: { status: true },
+    }),
   ]);
 
   const gradeByOffering = new Map(
@@ -146,6 +160,7 @@ export async function listFailedSubjectsForRetake(
     retakes.map((retake) => [retake.curriculumSubjectId, retake])
   );
 
+  const currentClosed = currentEval?.status === 'COMPLETED';
   const rows: FailedSubjectRetakeRow[] = [];
 
   for (const offering of offerings) {
@@ -160,10 +175,13 @@ export async function listFailedSubjectsForRetake(
       semester: offering.semester,
     };
     const isPrior = isPriorTerm(originalTerm, current);
+    const fromClosedStanding =
+      currentClosed && compareTerms(originalTerm, current) <= 0;
     const reason: SubjectScheduleReason | null =
       status === 'FAILED'
         ? 'FAILED'
-        : isPrior && (status === 'INCOMPLETE' || status === 'PENDING')
+        : (isPrior || fromClosedStanding) &&
+            (status === 'INCOMPLETE' || status === 'PENDING')
           ? status
           : null;
 

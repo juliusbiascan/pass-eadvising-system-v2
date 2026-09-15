@@ -3,8 +3,14 @@
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/lib/db';
-import { getMaxYearLevel } from '@/lib/student-progression';
+import { isEvaluationApproved } from '@/lib/evaluation';
+import { getTermEvaluationRecord } from '@/lib/evaluation-service';
 import {
+  getMaxYearLevel,
+  placeStudentOnRetakeTarget,
+} from '@/lib/student-progression';
+import {
+  compareTerms,
   formatRetakeScheduleLabel,
   formatTermRef,
   isPriorTerm,
@@ -68,13 +74,37 @@ export async function confirmFailedSubjectRetake(values: {
     return { error: 'This subject is already passed' };
   }
 
+  const current = {
+    yearLevel: student.yearLevel,
+    semester: student.currentSemester,
+  };
   const isPrior = isPriorTerm(
     { yearLevel: offering.yearLevel, semester: offering.semester },
-    { yearLevel: student.yearLevel, semester: student.currentSemester }
+    current
   );
+  const curriculumId = student.curriculumId ?? offering.curriculumId;
+  const [maxYearLevel, currentEval] = await Promise.all([
+    curriculumId ? getMaxYearLevel(curriculumId) : Promise.resolve(student.yearLevel + 2),
+    curriculumId
+      ? getTermEvaluationRecord({
+          studentId,
+          curriculumId,
+          yearLevel: student.yearLevel,
+          semester: student.currentSemester,
+        })
+      : Promise.resolve(null),
+  ]);
+  const currentTermClosed = isEvaluationApproved(currentEval?.status);
+  const fromClosedStanding =
+    currentTermClosed &&
+    compareTerms(
+      { yearLevel: offering.yearLevel, semester: offering.semester },
+      current
+    ) <= 0;
   const canSchedule =
     grade?.status === 'FAILED' ||
-    (isPrior && (!grade || grade.status === 'PENDING' || grade.status === 'INCOMPLETE'));
+    ((isPrior || fromClosedStanding) &&
+      (!grade || grade.status === 'PENDING' || grade.status === 'INCOMPLETE'));
 
   if (!canSchedule) {
     return {
@@ -83,9 +113,6 @@ export async function confirmFailedSubjectRetake(values: {
     };
   }
 
-  const curriculumId = student.curriculumId ?? offering.curriculumId;
-  const maxYearLevel = curriculumId ? await getMaxYearLevel(curriculumId) : student.yearLevel + 2;
-
   const target = resolveRetakeTargetTerm({
     schedule,
     failedYearLevel: offering.yearLevel,
@@ -93,6 +120,7 @@ export async function confirmFailedSubjectRetake(values: {
     studentYearLevel: student.yearLevel,
     studentSemester: student.currentSemester,
     maxYearLevel,
+    currentTermClosed,
   });
 
   if (!target) {
@@ -127,15 +155,24 @@ export async function confirmFailedSubjectRetake(values: {
     },
   });
 
+  let openedMakeupTerm = false;
+  if (currentTermClosed) {
+    openedMakeupTerm = await placeStudentOnRetakeTarget({ studentId, target });
+  }
+
   revalidatePath(`/dashboard/records/${studentId}`);
   revalidatePath(`/dashboard/students/${studentId}/evaluate`);
   revalidatePath('/dashboard/records');
   revalidatePath('/default');
 
   const kind = grade?.status === 'FAILED' ? 'Retake' : 'Makeup';
+  const termLabel = formatTermRef(target, maxYearLevel);
+  const placement = openedMakeupTerm
+    ? ` The student is now in that makeup term so grades can be entered.`
+    : ' It will appear on the student grade form in that term.';
 
   return {
-    success: `${kind} approved for ${formatRetakeScheduleLabel(schedule)} (${formatTermRef(target)}). It will appear on the student grade form in that term.`,
+    success: `${kind} approved for ${formatRetakeScheduleLabel(schedule)} (${termLabel}).${placement}`,
   };
 }
 

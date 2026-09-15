@@ -41,6 +41,8 @@ export function StudentPortalShell({ data }: StudentPortalShellProps) {
     hasSubmittedTermGrades,
     maxYearLevel,
     retakeOfferingData,
+    isMakeupStanding,
+    isProgramComplete,
   } = data;
 
   const handleTabChange = (tab: StudentPortalTab) => {
@@ -55,19 +57,28 @@ export function StudentPortalShell({ data }: StudentPortalShellProps) {
         student={student}
         progressPct={gradeStats.progressPct}
         currentTermLabel={currentTermLabel}
+        maxYearLevel={maxYearLevel}
+        isProgramComplete={isProgramComplete}
       />
 
-      {priorTermGaps.hasGap ? (
+      {!isProgramComplete && priorTermGaps.hasGap ? (
         <div className="mt-4 sm:mt-6">
           <PriorRecordsBanner
             studentYearLevel={student.yearLevel}
             gaps={priorTermGaps.gaps}
+            isMakeupStanding={isMakeupStanding}
+            assignedMakeupCount={retakeOfferingData.length}
           />
         </div>
       ) : null}
 
       <div className="mt-5 flex flex-col gap-5 lg:mt-8 lg:flex-row lg:gap-10">
-        <StudentPortalNav activeTab={activeTab} onTabChange={handleTabChange} />
+        <StudentPortalNav
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          isMakeupStanding={isMakeupStanding}
+          isProgramComplete={isProgramComplete}
+        />
 
         <div key={activeTab} className="student-portal-fade-up min-w-0 flex-1">
           {activeTab === 'curriculum' && (
@@ -75,6 +86,7 @@ export function StudentPortalShell({ data }: StudentPortalShellProps) {
               yearLevel={student.yearLevel}
               curriculumData={curriculumData}
               existingGrades={existingGrades}
+              maxYearLevel={maxYearLevel}
             />
           )}
 
@@ -92,6 +104,8 @@ export function StudentPortalShell({ data }: StudentPortalShellProps) {
               evaluationStatus={displayEvaluation.status}
               hasSubmittedTermGrades={hasSubmittedTermGrades}
               deferredSubjects={data.deferredSubjects}
+              isMakeupStanding={isMakeupStanding}
+              isProgramComplete={isProgramComplete}
               gradeCounts={{
                 passed: gradeStats.passed.length,
                 failed: gradeStats.failed.length,
@@ -111,6 +125,7 @@ export function StudentPortalShell({ data }: StudentPortalShellProps) {
               termEvaluationLists={termEvaluationLists}
               failedSubjects={gradeStats.failed}
               hasPriorTermGaps={priorTermGaps.hasGap}
+              isMakeupStanding={isMakeupStanding}
             />
           )}
 
@@ -123,6 +138,8 @@ export function StudentPortalShell({ data }: StudentPortalShellProps) {
               activeSemester={activeSemester}
               nextEnrollmentLabel={nextEnrollmentLabel}
               eligibleSubjects={termEvaluationLists.eligible}
+              isMakeupStanding={isMakeupStanding}
+              isProgramComplete={isProgramComplete}
             />
           )}
         </div>

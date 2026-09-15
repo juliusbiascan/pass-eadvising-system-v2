@@ -1,19 +1,37 @@
 import { Hash, Layers, Sparkles } from 'lucide-react';
 
+import { formatYearLevelLabel } from '@/lib/group-curriculum-offerings';
+import { formatSemesterLabel } from '@/lib/semester-terms';
+
 import type { StudentPortalStudent } from '../lib/types';
 
 interface StudentPortalHeroProps {
   student: StudentPortalStudent;
   progressPct: number;
   currentTermLabel: string;
+  maxYearLevel?: number;
+  isProgramComplete?: boolean;
 }
 
 export function StudentPortalHero({
   student,
   progressPct,
   currentTermLabel,
+  maxYearLevel,
+  isProgramComplete = false,
 }: StudentPortalHeroProps) {
   const firstName = student.fullName.split(' ')[0] || student.fullName;
+  const isMakeup = !isProgramComplete && maxYearLevel != null && student.yearLevel > maxYearLevel;
+  const standingLabel = isProgramComplete
+    ? 'Program complete'
+    : isMakeup
+      ? 'Makeup term'
+      : `Year ${student.yearLevel}`;
+  const termChip = isProgramComplete
+    ? 'All terms approved'
+    : isMakeup
+      ? `${formatYearLevelLabel(student.yearLevel)} • ${formatSemesterLabel(student.currentSemester)}`
+      : currentTermLabel || student.currentSemester;
 
   return (
     <section className="student-portal-fade-up relative overflow-hidden rounded-2xl border border-border/80 bg-card p-4 shadow-sm sm:p-6">
@@ -33,7 +51,7 @@ export function StudentPortalHero({
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-(--pass-red)">
-            Welcome back
+            {isProgramComplete ? 'Congratulations' : 'Welcome back'}
           </p>
           <h1 className="mt-1 font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             {firstName}
@@ -47,11 +65,11 @@ export function StudentPortalHero({
             </li>
             <li className="inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-2.5 py-1 text-xs font-medium">
               <Layers className="size-3 text-(--pass-gold)" aria-hidden />
-              Year {student.yearLevel}
+              {standingLabel}
             </li>
             <li className="inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-2.5 py-1 text-xs font-medium">
               <Sparkles className="size-3 text-(--pass-red)" aria-hidden />
-              {currentTermLabel || student.currentSemester}
+              {termChip}
             </li>
           </ul>
         </div>

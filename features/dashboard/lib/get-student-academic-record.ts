@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { parseEvaluationSnapshot } from '@/lib/evaluation';
 import { formatSemesterLabel } from '@/lib/semester-terms';
+import { formatTermRef } from '@/lib/subject-retake-helpers';
 import type { EvaluationStatus, SemesterTerm } from '@/app/generated/prisma/enums';
 
 export type RecordSubjectOffering = {
@@ -20,6 +21,7 @@ export type RecordTermGroup = {
   semester: SemesterTerm;
   label: string;
   subjects: RecordSubjectOffering[];
+  isMakeupTerm?: boolean;
   evaluationStatus: EvaluationStatus | null;
   evaluationSubmittedAt: string | null;
   evaluationSubmittedBy: string | null;
@@ -74,6 +76,7 @@ export type StudentAcademicRecord = {
   existingGrades: Record<string, { grade?: string; status?: string }>;
   gradeSummary: CurriculumRecordSummary;
   priorCurriculums: PriorCurriculumRecord[];
+  maxYearLevel: number;
 };
 
 type GradeRow = {
@@ -193,6 +196,121 @@ function buildTerms(
   return Array.from(groupMap.values());
 }
 
+type ScheduledSubject = {
+  targetYearLevel: number;
+  targetSemester: SemesterTerm;
+  offering: {
+    id: string;
+    subjectId: string;
+    code: string;
+    description: string;
+    units: number;
+    yearLevel: number;
+    semester: SemesterTerm;
+    displayOrder: number;
+    curriculumId: string;
+  };
+};
+
+function evaluationFields(
+  evalRecord: EvaluationRow | undefined
+): Pick<
+  RecordTermGroup,
+  | 'evaluationStatus'
+  | 'evaluationSubmittedAt'
+  | 'evaluationSubmittedBy'
+  | 'evaluationCompletedByName'
+  | 'evaluationCompletedByPosition'
+  | 'evaluationRemarks'
+  | 'evaluationApprovedAt'
+  | 'evaluationApprovedByName'
+  | 'evaluationApprovedByPosition'
+> {
+  const snapshot = evalRecord?.summary
+    ? parseEvaluationSnapshot(evalRecord.summary)
+    : null;
+
+  return {
+    evaluationStatus: evalRecord?.status ?? null,
+    evaluationSubmittedAt: evalRecord?.submittedAt?.toISOString() ?? null,
+    evaluationSubmittedBy: evalRecord?.submittedBy ?? null,
+    evaluationCompletedByName: snapshot?.completedByName ?? null,
+    evaluationCompletedByPosition: snapshot?.completedByPosition ?? null,
+    evaluationRemarks: snapshot?.remarks ?? null,
+    evaluationApprovedAt:
+      evalRecord?.approvedAt?.toISOString() ?? snapshot?.approvedAt ?? null,
+    evaluationApprovedByName: snapshot?.approvedByName ?? null,
+    evaluationApprovedByPosition: snapshot?.approvedByPosition ?? null,
+  };
+}
+
+function appendScheduledSubjectsToTerms(
+  terms: RecordTermGroup[],
+  scheduled: ScheduledSubject[],
+  evaluations: EvaluationRow[],
+  curriculumId: string,
+  maxYearLevel: number
+): RecordTermGroup[] {
+  if (scheduled.length === 0) {
+    return terms;
+  }
+
+  const evaluationByTerm = new Map(
+    evaluations
+      .filter((evaluation) => evaluation.curriculumId === curriculumId)
+      .map((evaluation) => [`${evaluation.yearLevel}-${evaluation.semester}`, evaluation])
+  );
+  const groupMap = new Map(terms.map((term) => [term.key, term]));
+
+  for (const item of scheduled) {
+    if (item.offering.curriculumId !== curriculumId) {
+      continue;
+    }
+
+    const key = `${item.targetYearLevel}-${item.targetSemester}`;
+    let group = groupMap.get(key);
+
+    if (!group) {
+      const evalRecord = evaluationByTerm.get(key);
+      const termRef = {
+        yearLevel: item.targetYearLevel,
+        semester: item.targetSemester,
+      };
+      group = {
+        key,
+        yearLevel: item.targetYearLevel,
+        semester: item.targetSemester,
+        label: formatTermRef(termRef, maxYearLevel),
+        subjects: [],
+        isMakeupTerm: item.targetYearLevel > maxYearLevel,
+        ...evaluationFields(evalRecord),
+      };
+      groupMap.set(key, group);
+    }
+
+    if (group.subjects.some((subject) => subject.id === item.offering.id)) {
+      continue;
+    }
+
+    group.subjects.push({
+      id: item.offering.id,
+      subjectId: item.offering.subjectId,
+      code: item.offering.code,
+      description: item.offering.description,
+      units: item.offering.units,
+      yearLevel: item.targetYearLevel,
+      semester: item.targetSemester,
+      displayOrder: item.offering.displayOrder,
+    });
+  }
+
+  return Array.from(groupMap.values()).sort((a, b) => {
+    if (a.yearLevel !== b.yearLevel) return a.yearLevel - b.yearLevel;
+    if (a.semester === b.semester) return 0;
+    return a.semester === 'FIRST' ? -1 : 1;
+  });
+}
+
 export async function getStudentAcademicRecord(
   studentId: string
 ): Promise<StudentAcademicRecord | null> {
@@ -238,6 +356,29 @@ export async function getStudentAcademicRecord(
           fromProgramCode: true,
           fromCurriculumLabel: true,
           createdAt: true,
+        },
+      },
+      retakes: {
+        select: {
+          targetYearLevel: true,
+          targetSemester: true,
+          curriculumSubject: {
+            select: {
+              id: true,
+              curriculumId: true,
+              yearLevel: true,
+              semester: true,
+              displayOrder: true,
+              subject: {
+                select: {
+                  id: true,
+                  code: true,
+                  description: true,
+                  units: true,
+                },
+              },
+            },
+          },
         },
       },
       curriculumRef: {
@@ -348,10 +489,35 @@ export async function getStudentAcademicRecord(
 
   let terms: RecordTermGroup[] = [];
   let gradeSummary = emptySummary();
+  let maxYearLevel = 1;
 
   if (student.curriculumId) {
     const currentOfferings = mapOfferings(student.curriculumId);
-    terms = buildTerms(currentOfferings, student.evaluations, student.curriculumId);
+    maxYearLevel = currentOfferings.reduce(
+      (max, offering) => Math.max(max, offering.yearLevel),
+      1
+    );
+    terms = appendScheduledSubjectsToTerms(
+      buildTerms(currentOfferings, student.evaluations, student.curriculumId),
+      student.retakes.map((retake) => ({
+        targetYearLevel: retake.targetYearLevel,
+        targetSemester: retake.targetSemester,
+        offering: {
+          id: retake.curriculumSubject.id,
+          subjectId: retake.curriculumSubject.subject.id,
+          code: retake.curriculumSubject.subject.code,
+          description: retake.curriculumSubject.subject.description,
+          units: retake.curriculumSubject.subject.units,
+          yearLevel: retake.curriculumSubject.yearLevel,
+          semester: retake.curriculumSubject.semester,
+          displayOrder: retake.curriculumSubject.displayOrder,
+          curriculumId: retake.curriculumSubject.curriculumId,
+        },
+      })),
+      student.evaluations,
+      student.curriculumId,
+      maxYearLevel
+    );
     gradeSummary = summarizeGrades(
       grades,
       new Set(currentOfferings.map((offering) => offering.id))
@@ -435,6 +601,7 @@ export async function getStudentAcademicRecord(
     existingGrades,
     gradeSummary,
     priorCurriculums,
+    maxYearLevel,
   };
 }
 

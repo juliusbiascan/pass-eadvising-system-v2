@@ -26,6 +26,7 @@ import type { SemesterTermValue } from '@/lib/semester-terms';
 
 import { cancelGradeSubmission } from '../actions/cancel-grade-submission';
 import { GradeSubmissionForm } from './grade-submission-form';
+import { ProgramCompleteView } from './program-complete-view';
 import { RetakeRequestForm } from './retake-request-form';
 import StudentEvaluationForm from './student-evaluation-form';
 import type { CurriculumItem, ExistingGrade, StudentPortalStudent } from '../lib/types';
@@ -44,6 +45,8 @@ interface GradesViewProps {
   hasSubmittedTermGrades: boolean;
   deferredSubjects: CurriculumItem[];
   gradeCounts: Record<'passed' | 'failed' | 'incomplete' | 'pending', number>;
+  isMakeupStanding?: boolean;
+  isProgramComplete?: boolean;
 }
 
 function StatCard({
@@ -84,6 +87,8 @@ export function GradesView({
   hasSubmittedTermGrades,
   deferredSubjects,
   gradeCounts,
+  isMakeupStanding = false,
+  isProgramComplete = false,
 }: GradesViewProps) {
   const router = useRouter();
   const [submittedGrades, setSubmittedGrades] = useState<Record<string, ExistingGrade> | null>(
@@ -127,29 +132,48 @@ export function GradesView({
     [existingGrades, submittedGrades]
   );
 
+  const assignedIds = useMemo(
+    () => new Set(retakeOfferings.map((offering) => offering.id)),
+    [retakeOfferings]
+  );
+
   const failedForRequest = useMemo(() => {
     const byId = new Map(
       deferredSubjects
-        .filter((subject) => subject.scheduleKind === 'FAILED')
+        .filter(
+          (subject) => subject.scheduleKind === 'FAILED' && !assignedIds.has(subject.id)
+        )
         .map((subject) => [subject.id, subject])
     );
     for (const offering of formOfferings) {
+      if (offering.isRetake) continue;
       const status = gradesForSlip[offering.id]?.status;
       if (status === 'FAILED' && !byId.has(offering.id)) {
         byId.set(offering.id, { ...offering, scheduleKind: 'FAILED' });
       }
     }
     return Array.from(byId.values());
-  }, [deferredSubjects, formOfferings, gradesForSlip]);
+  }, [assignedIds, deferredSubjects, formOfferings, gradesForSlip]);
 
   const leftoverForRequest = useMemo(
     () =>
       deferredSubjects.filter(
         (subject) =>
-          subject.scheduleKind === 'PENDING' || subject.scheduleKind === 'INCOMPLETE'
+          !assignedIds.has(subject.id) &&
+          (subject.scheduleKind === 'PENDING' || subject.scheduleKind === 'INCOMPLETE')
       ),
-    [deferredSubjects]
+    [assignedIds, deferredSubjects]
   );
+
+  if (isProgramComplete) {
+    return (
+      <ProgramCompleteView
+        studentName={student.fullName}
+        course={student.course}
+        passedCount={gradeCounts.passed}
+      />
+    );
+  }
 
   if (gradesLocked) {
     return (
@@ -233,8 +257,8 @@ export function GradesView({
               <AlertTitle className="text-pretty">Failed subjects</AlertTitle>
               <AlertDescription className="text-pretty">
                 Print the retake request below and submit it to an administrator. After they
-                confirm next semester or next year, the subject will appear on your grade form
-                for that term.
+                confirm next semester, next year, or a makeup term (if every curriculum term
+                is already approved), the subject will appear on your grade form for that term.
               </AlertDescription>
             </Alert>
             <RetakeRequestForm
@@ -251,10 +275,9 @@ export function GradesView({
             <Alert className="border-amber-500/40 bg-amber-500/10">
               <AlertTitle className="text-pretty">Leftover subjects from an earlier term</AlertTitle>
               <AlertDescription className="text-pretty">
-                These subjects are still pending or incomplete (for example 1st semester
-                subjects after a shift while you are already in 2nd semester). Print the
-                request below so an administrator can assign each subject to next semester
-                or next year.
+                {isMakeupStanding
+                  ? 'These leftover subjects are still pending or incomplete. Print the request below so an administrator can assign them to this makeup term.'
+                  : 'These subjects are still pending or incomplete (for example 1st semester subjects after a shift while you are already in 2nd semester). Print the request below so an administrator can assign each subject to next semester, next year, or a makeup term if every curriculum term is already approved.'}
               </AlertDescription>
             </Alert>
             <RetakeRequestForm
@@ -281,6 +304,8 @@ export function GradesView({
         existingGrades={existingGrades}
         gradePassSettings={gradePassSettings}
         evaluationStatus={evaluationStatus}
+        isMakeupStanding={isMakeupStanding}
+        displayTermLabel={currentTermLabel}
         onSaved={setSubmittedGrades}
       />
 
@@ -305,8 +330,8 @@ export function GradesView({
             <AlertTitle className="text-pretty">Request a retake</AlertTitle>
             <AlertDescription className="text-pretty">
               Print this form and submit it to an administrator. After they confirm next
-              semester or next year, the failed subject will appear on your grade form for
-              that term.
+              semester, next year, or a makeup term if you have already finished the program,
+              the failed subject will appear on your grade form for that term.
             </AlertDescription>
           </Alert>
           <RetakeRequestForm
@@ -323,9 +348,9 @@ export function GradesView({
           <Alert className="border-amber-500/40 bg-amber-500/10">
             <AlertTitle className="text-pretty">Request leftover subjects</AlertTitle>
             <AlertDescription className="text-pretty">
-              Print this form so an administrator can assign unfinished 1st semester (or
-              earlier) subjects to next semester or next year, the same way failed
-              subjects are scheduled.
+              {isMakeupStanding
+                ? 'Print this form so an administrator can add unfinished leftover subjects to this makeup term.'
+                : 'Print this form so an administrator can assign unfinished 1st semester (or earlier) subjects to next semester, next year, or a makeup term after the last approved curriculum term.'}
             </AlertDescription>
           </Alert>
           <RetakeRequestForm

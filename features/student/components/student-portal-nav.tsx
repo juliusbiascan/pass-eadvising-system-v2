@@ -17,9 +17,16 @@ const tabIcons: Record<StudentPortalTab, typeof BookOpen> = {
 interface StudentPortalNavProps {
   activeTab: StudentPortalTab;
   onTabChange: (tab: StudentPortalTab) => void;
+  isMakeupStanding?: boolean;
+  isProgramComplete?: boolean;
 }
 
-export function StudentPortalNav({ activeTab, onTabChange }: StudentPortalNavProps) {
+export function StudentPortalNav({
+  activeTab,
+  onTabChange,
+  isMakeupStanding = false,
+  isProgramComplete = false,
+}: StudentPortalNavProps) {
   return (
     <>
       <nav
@@ -68,7 +75,15 @@ export function StudentPortalNav({ activeTab, onTabChange }: StudentPortalNavPro
                       isActive ? 'text-foreground/70' : 'text-muted-foreground'
                     )}
                   >
-                    {item.description}
+                      {item.id === 'grades' && isProgramComplete
+                        ? 'Congratulations — you finished'
+                        : item.id === 'curriculum' && isProgramComplete
+                          ? 'Full curriculum — program complete'
+                          : item.id === 'grades' && isMakeupStanding
+                            ? 'Enter leftover and retake grades'
+                            : item.id === 'curriculum' && isMakeupStanding
+                              ? 'Full curriculum; makeup work is on Grades'
+                              : item.description}
                   </span>
                 </button>
               </li>

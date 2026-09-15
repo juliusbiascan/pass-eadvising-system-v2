@@ -19,6 +19,8 @@ interface ProgressViewProps {
   activeSemester: string;
   nextEnrollmentLabel: string | null;
   eligibleSubjects: EvaluationSubject[];
+  isMakeupStanding?: boolean;
+  isProgramComplete?: boolean;
 }
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
@@ -61,6 +63,8 @@ export function ProgressView({
   activeSemester,
   nextEnrollmentLabel,
   eligibleSubjects,
+  isMakeupStanding = false,
+  isProgramComplete = false,
 }: ProgressViewProps) {
   const resolveSubjects = [...gradeStats.failed, ...gradeStats.incomplete];
   const outlook = buildGraduationOutlook({
@@ -70,6 +74,8 @@ export function ProgressView({
   });
   const programPct = Math.round((outlook.currentTermIndex / outlook.programSemesters) * 100);
   const delayCount = resolveSubjects.length;
+  const showMakeupPath =
+    !isProgramComplete && (isMakeupStanding || (outlook.isComplete && delayCount > 0));
 
   return (
     <div className="space-y-6">
@@ -85,16 +91,33 @@ export function ProgressView({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-xl border border-(--pass-gold)/35 bg-(--pass-gold)/10 p-4">
-            {outlook.isComplete ? (
+            {isProgramComplete ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--pass-red)">
-                  Program complete
+                  Congratulations
                 </p>
                 <p className="mt-1 font-heading text-lg font-semibold tracking-tight sm:text-xl">
-                  You have reached the end of this curriculum.
+                  You passed every subject in this curriculum.
                 </p>
                 <p className="mt-1 text-pretty text-sm text-muted-foreground">
-                  Confirm remaining requirements with an administrator before graduation clearance.
+                  All terms are approved. Confirm remaining requirements with the registrar before
+                  graduation clearance.
+                </p>
+              </>
+            ) : showMakeupPath || outlook.isComplete ? (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--pass-red)">
+                  {showMakeupPath ? 'Makeup term' : 'Program complete'}
+                </p>
+                <p className="mt-1 font-heading text-lg font-semibold tracking-tight sm:text-xl">
+                  {showMakeupPath
+                    ? 'You are taking leftover or failed subjects after the last curriculum term.'
+                    : 'You have reached the end of this curriculum.'}
+                </p>
+                <p className="mt-1 text-pretty text-sm text-muted-foreground">
+                  {showMakeupPath
+                    ? 'Enter makeup or retake grades under Grades after an administrator assigns them. Confirm remaining requirements with an administrator before graduation clearance.'
+                    : 'Confirm remaining requirements with an administrator before graduation clearance.'}
                 </p>
               </>
             ) : outlook.isOnFinalTerm ? (
@@ -147,7 +170,14 @@ export function ProgressView({
               label="Semesters left"
               value={outlook.isComplete ? 0 : outlook.remainingSemesters}
             />
-            <StatCard label="You are in" value={`Y${yearLevel} ${formatSemesterLabel(activeSemester)}`} />
+            <StatCard
+              label="You are in"
+              value={
+                yearLevel > maxYearLevel
+                  ? 'Makeup'
+                  : `Y${yearLevel} ${formatSemesterLabel(activeSemester)}`
+              }
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

@@ -53,6 +53,7 @@ type ConfirmRetakesPanelProps = {
   studentYearLevel: number;
   studentSemester: SemesterTerm;
   maxYearLevel: number;
+  currentTermClosed?: boolean;
   failedSubjects: FailedSubjectRetakeRow[];
 };
 
@@ -61,6 +62,7 @@ export function ConfirmRetakesPanel({
   studentYearLevel,
   studentSemester,
   maxYearLevel,
+  currentTermClosed = false,
   failedSubjects,
 }: ConfirmRetakesPanelProps) {
   const router = useRouter();
@@ -79,8 +81,9 @@ export function ConfirmRetakesPanel({
       studentYearLevel,
       studentSemester,
       maxYearLevel,
+      currentTermClosed,
     });
-  }, [activeSubject, schedule, studentYearLevel, studentSemester, maxYearLevel]);
+  }, [activeSubject, schedule, studentYearLevel, studentSemester, maxYearLevel, currentTermClosed]);
 
   if (failedSubjects.length === 0) {
     return null;
@@ -132,9 +135,9 @@ export function ConfirmRetakesPanel({
       <CardHeader className="border-b">
         <CardTitle>Subjects to take later</CardTitle>
         <CardDescription>
-          Failed subjects and unfinished subjects from an earlier term (for example 1st
-          semester leftovers after a shift) can be assigned to next semester or next year.
-          Confirmed subjects appear on the student grade form for that term.
+          Failed subjects and unfinished leftover subjects can be assigned to next semester,
+          next year, or a makeup term after the last approved curriculum term. Confirmed
+          subjects appear on the student grade form for that term.
         </CardDescription>
       </CardHeader>
       {(error || success) && (
@@ -194,7 +197,7 @@ export function ConfirmRetakesPanel({
                           {formatTermRef({
                             yearLevel: subject.retake!.targetYearLevel,
                             semester: subject.retake!.targetSemester,
-                          })}
+                          }, maxYearLevel)}
                         </Badge>
                         <p className="text-xs text-muted-foreground">
                           {formatRetakeScheduleLabel(subject.retake!.schedule)}
@@ -268,9 +271,9 @@ export function ConfirmRetakesPanel({
               <span>
                 <span className="block font-medium">Next semester</span>
                 <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                  The following term after the original subject term. For a 1st semester
-                  leftover while the student is already in 2nd semester, that is this
-                  current term.
+                  {currentTermClosed
+                    ? 'Opens the next makeup term after the last approved semester so leftover and failed subjects can be graded.'
+                    : 'The following term after the original subject term. For a 1st semester leftover while the student is already in 2nd semester, that is this current term.'}
                 </span>
               </span>
             </Label>
@@ -282,7 +285,9 @@ export function ConfirmRetakesPanel({
               <span>
                 <span className="block font-medium">Next year</span>
                 <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                  Same semester in the next year level, when the subject is typically offered again.
+                  {currentTermClosed
+                    ? 'Same semester in the following year, including a makeup year after the program if every curriculum term is already approved.'
+                    : 'Same semester in the next year level, when the subject is typically offered again.'}
                 </span>
               </span>
             </Label>
@@ -291,7 +296,12 @@ export function ConfirmRetakesPanel({
           {previewTarget ? (
             <p className="text-sm text-muted-foreground">
               This subject will appear on the student grade form in{' '}
-              <strong className="text-foreground">{formatTermRef(previewTarget)}</strong>.
+              <strong className="text-foreground">
+                {formatTermRef(previewTarget, maxYearLevel)}
+              </strong>
+              {currentTermClosed && previewTarget.yearLevel > maxYearLevel
+                ? '. The student will be moved into that makeup term so grades can be entered.'
+                : '.'}
             </p>
           ) : null}
 

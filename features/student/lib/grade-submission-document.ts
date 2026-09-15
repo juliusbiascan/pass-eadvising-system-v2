@@ -33,6 +33,13 @@ export function buildGradeSubmissionRows(
 }
 
 export function buildGradeSubmissionPlainText(doc: GradeSubmissionDocument): string {
+  const gradeLines =
+    doc.rows.length > 0
+      ? doc.rows.map(
+          (row) => `${row.code} | ${row.description} | ${row.units} u | ${row.grade}`
+        )
+      : ['No subjects for this term'];
+
   const lines = [
     'PASS COLLEGE',
     'e-Advising System',
@@ -44,9 +51,7 @@ export function buildGradeSubmissionPlainText(doc: GradeSubmissionDocument): str
     `Year / Term: Year ${doc.yearLevel} • ${doc.termLabel}`,
     '',
     'Grades',
-    ...doc.rows.map(
-      (row) => `${row.code} | ${row.description} | ${row.units} u | ${row.grade}`
-    ),
+    ...gradeLines,
     '',
     'Student signature over printed name:',
     doc.studentName,
@@ -59,17 +64,23 @@ export function buildGradeSubmissionPlainText(doc: GradeSubmissionDocument): str
 }
 
 export function buildGradeSubmissionEmailBody(doc: GradeSubmissionDocument): string {
-  const rows = doc.rows
-    .map(
-      (row) => `
+  const rows =
+    doc.rows.length > 0
+      ? doc.rows
+          .map(
+            (row) => `
         <tr>
           <td style="border:1px solid #1a1617;padding:8px 10px">${escapeHtml(row.code)}</td>
           <td style="border:1px solid #1a1617;padding:8px 10px">${escapeHtml(row.description)}</td>
           <td style="border:1px solid #1a1617;padding:8px 10px;text-align:center">${row.units}</td>
           <td style="border:1px solid #1a1617;padding:8px 10px;text-align:center">${escapeHtml(row.grade)}</td>
         </tr>`
-    )
-    .join('');
+          )
+          .join('')
+      : `
+        <tr>
+          <td colspan="4" style="border:1px solid #1a1617;padding:24px 10px;text-align:center;color:#6b6566">No subjects for this term</td>
+        </tr>`;
 
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px 0;font-size:14px">
@@ -102,17 +113,23 @@ function escapeHtml(value: string) {
 }
 
 export function buildGradeSubmissionHtml(doc: GradeSubmissionDocument): string {
-  const rows = doc.rows
-    .map(
-      (row) => `
+  const rows =
+    doc.rows.length > 0
+      ? doc.rows
+          .map(
+            (row) => `
         <tr>
           <td>${escapeHtml(row.code)}</td>
           <td>${escapeHtml(row.description)}</td>
           <td style="text-align:center">${row.units}</td>
           <td style="text-align:center">${escapeHtml(row.grade)}</td>
         </tr>`
-    )
-    .join('');
+          )
+          .join('')
+      : `
+        <tr>
+          <td colspan="4" style="text-align:center;color:#6b6566;padding:24px 10px">No subjects for this term</td>
+        </tr>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -141,11 +158,24 @@ export function buildGradeSubmissionHtml(doc: GradeSubmissionDocument): string {
     table.grades th { background: #f3f3f4; text-align: left; }
     .signs { display: flex; gap: 48px; margin-top: 56px; }
     .sign { flex: 1; text-align: center; }
-    .line { border-bottom: 1px solid #1a1617; height: 48px; margin-bottom: 6px; }
+    .line {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      border-bottom: 1px solid #1a1617;
+      height: 48px;
+      margin-bottom: 6px;
+    }
     .caption { font-size: 11px; color: #6b6566; font-family: Arial, sans-serif; }
-    .printed { margin-top: 10px; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; min-height: 1.4em; }
-    .printed.blank { border-bottom: 1px solid #1a1617; width: 85%; margin: 10px auto 0; font-weight: 400; }
-    .role { font-size: 12px; color: #6b6566; font-family: Arial, sans-serif; }
+    .printed {
+      padding: 0 8px 4px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      min-height: 1.2em;
+    }
+    .role { font-size: 12px; color: #6b6566; font-family: Arial, sans-serif; margin-top: 4px; }
     @media print {
       body { padding: 0; }
       .signs { break-inside: avoid; }
@@ -182,15 +212,13 @@ export function buildGradeSubmissionHtml(doc: GradeSubmissionDocument): string {
     </table>
     <div class="signs">
       <div class="sign">
-        <div class="line"></div>
+        <div class="line"><span class="printed">${escapeHtml(doc.studentName)}</span></div>
         <div class="caption">Signature over printed name</div>
-        <div class="printed">${escapeHtml(doc.studentName)}</div>
         <div class="role">Student</div>
       </div>
       <div class="sign">
-        <div class="line"></div>
+        <div class="line"><span class="printed">&nbsp;</span></div>
         <div class="caption">Signature over printed name</div>
-        <div class="printed blank">&nbsp;</div>
         <div class="role">Administrator</div>
       </div>
     </div>

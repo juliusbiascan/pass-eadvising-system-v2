@@ -45,10 +45,12 @@ interface StudentEvaluationFormProps {
   studentId: string;
   curriculumId?: string;
   semester?: SemesterTermValue;
+  displayTermLabel?: string;
   offerings: CurriculumItem[];
   existingGrades: Record<string, ExistingGrade>;
   gradePassSettings: GradePassSettings;
   evaluationStatus?: EvaluationStatus;
+  isMakeupStanding?: boolean;
   onSaved?: (grades: Record<string, ExistingGrade>) => void;
 }
 
@@ -78,8 +80,11 @@ function buildInitialValues(
   const initial: Record<string, { grade: string; status: GradeStatus }> = {};
   for (const offering of offerings) {
     if (offering.isRetake) {
-      initial[offering.id] = { grade: '', status: 'PENDING' };
-      continue;
+      const existing = existingGrades[offering.id];
+      if (offering.scheduleKind === 'FAILED' && existing?.status !== 'PASSED') {
+        initial[offering.id] = { grade: '', status: 'PENDING' };
+        continue;
+      }
     }
     initial[offering.id] = {
       grade: existingGrades[offering.id]?.grade?.toString() || '',
@@ -92,10 +97,12 @@ function buildInitialValues(
 export default function StudentEvaluationForm({
   studentId,
   semester,
+  displayTermLabel,
   offerings,
   existingGrades,
   gradePassSettings,
   evaluationStatus = 'PENDING',
+  isMakeupStanding = false,
   onSaved,
 }: StudentEvaluationFormProps) {
   const router = useRouter();
@@ -134,7 +141,7 @@ export default function StudentEvaluationForm({
     return { entered, total, progress };
   }, [offerings, values]);
 
-  const termLabel = semester ? formatSemesterLabel(semester) : null;
+  const termLabel = displayTermLabel || (semester ? formatSemesterLabel(semester) : null);
   const retakeOfferings = useMemo(
     () => offerings.filter((offering) => offering.isRetake),
     [offerings]
@@ -223,10 +230,12 @@ export default function StudentEvaluationForm({
             <div className="min-w-0 space-y-1">
               <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
                 <BookOpen className="size-4 shrink-0 text-(--pass-red)" />
-                Term grades
+                {isMakeupStanding ? 'Makeup term grades' : 'Term grades'}
               </CardTitle>
               <CardDescription className="text-pretty">
-                Enter your grades for this term. {formatPassingRule(gradePassSettings)}.
+                {isMakeupStanding
+                  ? `Enter grades for leftover or failed subjects assigned to this makeup term. ${formatPassingRule(gradePassSettings)}.`
+                  : `Enter your grades for this term. ${formatPassingRule(gradePassSettings)}.`}
               </CardDescription>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -262,7 +271,9 @@ export default function StudentEvaluationForm({
             <Alert className="border-rose-500/40 bg-rose-500/10">
               <AlertDescription className="text-pretty text-sm leading-relaxed">
                 {retakeOfferings.some((offering) => offering.scheduleKind !== 'FAILED')
-                  ? 'An administrator assigned leftover or failed subjects to this term. Enter the grade below — they are marked Makeup or Retake.'
+                  ? isMakeupStanding
+                    ? 'This makeup term is for leftover or failed subjects assigned by an administrator. Enter each grade below — they are marked Makeup or Retake.'
+                    : 'An administrator assigned leftover or failed subjects to this term. Enter the grade below — they are marked Makeup or Retake.'
                   : retakeOfferings.length === 1
                     ? 'An administrator approved a failed subject for retake this term. Enter the new grade below — it is marked Retake.'
                     : `An administrator approved ${retakeOfferings.length} failed subjects for retake this term. Enter the new grades below — they are marked Retake.`}
@@ -274,7 +285,11 @@ export default function StudentEvaluationForm({
             <div className="rounded-lg border border-dashed px-4 py-8 text-center sm:px-6 sm:py-10">
               <p className="text-sm font-medium">No subjects for this term</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Subjects for your current year level and semester will appear here.
+                {isMakeupStanding
+                  ? 'Ask an administrator to assign leftover or failed subjects to this makeup term under Records → Subjects to take later.'
+                  : isEvaluationApproved(evaluationStatus)
+                    ? 'This term is already approved. Ask an administrator to assign leftover subjects to a makeup term.'
+                    : 'Subjects for your current year level and semester will appear here. After the last term is approved, leftover subjects are taken in a makeup term once an administrator assigns them.'}
               </p>
             </div>
           ) : (

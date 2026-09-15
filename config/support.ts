@@ -73,7 +73,12 @@ export const supportFaqs: SupportFaq[] = [
   {
     question: 'I shifted programs and some earlier subjects are still incomplete.',
     answer:
-      'On the student portal Grades tab, print the leftover-subject request and submit it to an administrator. Staff confirm each subject for next semester or next year under Records → Subjects to take later. Until those grades are entered and passed, later subjects that depend on them may stay blocked.',
+      'On the student portal Grades tab, print the leftover-subject or retake request and submit it to an administrator. Staff confirm each subject for next semester, next year, or a makeup term (if every curriculum term is already approved) under Records → Subjects to take later. Until those grades are entered and passed, later subjects that depend on them may stay blocked.',
+  },
+  {
+    question: 'How do I take leftover or failed subjects after every year is already approved?',
+    answer:
+      'Print the leftover or retake request from the Grades tab and submit it to an administrator. On Records → Subjects to take later, staff assign each subject to next semester, next year, or a makeup term. After the last curriculum term is approved, that assignment opens a makeup term so you can enter the new grade. The original approved terms stay on file.',
   },
   {
     question: 'Can I cancel my grade submission?',

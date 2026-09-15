@@ -50,8 +50,25 @@ export function isPriorTerm(term: TermRef, current: TermRef): boolean {
   return compareTerms(term, current) < 0;
 }
 
-export function formatTermRef(term: TermRef): string {
-  return `${formatYearLevelLabel(term.yearLevel)} • ${formatSemesterLabel(term.semester)}`;
+export function isMakeupStanding(yearLevel: number, maxYearLevel: number): boolean {
+  return yearLevel > maxYearLevel;
+}
+
+/** Next term with no curriculum ceiling — used to open a makeup term after the last approved year. */
+export function nextTermUnbounded(yearLevel: number, semester: SemesterTerm): TermRef {
+  if (semester === 'FIRST') {
+    return { yearLevel, semester: 'SECOND' };
+  }
+
+  return { yearLevel: yearLevel + 1, semester: 'FIRST' };
+}
+
+export function formatTermRef(term: TermRef, maxYearLevel?: number): string {
+  const base = `${formatYearLevelLabel(term.yearLevel)} • ${formatSemesterLabel(term.semester)}`;
+  if (maxYearLevel != null && term.yearLevel > maxYearLevel) {
+    return `Makeup term (${base})`;
+  }
+  return base;
 }
 
 function nextTermAfter(
@@ -74,6 +91,8 @@ function nextTermAfter(
  * When the student may retake a failed subject.
  * Next semester follows the failed term (or the current term if that date has passed).
  * Next year is the same semester in the following year level.
+ * When the current term is already approved, leftover work is placed on a makeup term
+ * after the last curriculum term instead of the locked current term.
  */
 export function resolveRetakeTargetTerm(options: {
   schedule: RetakeScheduleValue;
@@ -82,6 +101,7 @@ export function resolveRetakeTargetTerm(options: {
   studentYearLevel: number;
   studentSemester: SemesterTerm;
   maxYearLevel: number;
+  currentTermClosed?: boolean;
 }): TermRef | null {
   const {
     schedule,
@@ -90,25 +110,35 @@ export function resolveRetakeTargetTerm(options: {
     studentYearLevel,
     studentSemester,
     maxYearLevel,
+    currentTermClosed = false,
   } = options;
   const current: TermRef = { yearLevel: studentYearLevel, semester: studentSemester };
   const ceiling = Math.max(maxYearLevel, studentYearLevel, failedYearLevel) + 2;
 
+  let target: TermRef;
+
   if (schedule === 'NEXT_SEMESTER') {
     const afterFailed = nextTermAfter(failedYearLevel, failedSemester, ceiling);
-    if (!afterFailed) return current;
-    if (compareTerms(afterFailed, current) >= 0) {
-      return afterFailed;
+    if (!afterFailed) {
+      target = current;
+    } else if (compareTerms(afterFailed, current) >= 0) {
+      target = afterFailed;
+    } else {
+      target = current;
     }
-    return current;
+  } else {
+    target = { yearLevel: failedYearLevel + 1, semester: failedSemester };
+    if (compareTerms(target, current) < 0) {
+      target = { yearLevel: studentYearLevel + 1, semester: failedSemester };
+      if (compareTerms(target, current) < 0) {
+        target = { yearLevel: studentYearLevel + 1, semester: studentSemester };
+      }
+    }
   }
 
-  let target: TermRef = { yearLevel: failedYearLevel + 1, semester: failedSemester };
-  if (compareTerms(target, current) < 0) {
-    target = { yearLevel: studentYearLevel + 1, semester: failedSemester };
-    if (compareTerms(target, current) < 0) {
-      target = { yearLevel: studentYearLevel + 1, semester: studentSemester };
-    }
+  if (currentTermClosed && compareTerms(target, current) <= 0) {
+    return nextTermUnbounded(current.yearLevel, current.semester);
   }
+
   return target;
 }

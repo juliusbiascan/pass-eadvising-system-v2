@@ -26,9 +26,8 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { getGradePassSettings } from '@/lib/grade-settings';
-import { formatSemesterLabel } from '@/lib/semester-terms';
-import { formatYearLevelLabel } from '@/lib/group-curriculum-offerings';
 import { listFailedSubjectsForRetake } from '@/lib/subject-retakes';
+import { formatTermRef } from '@/lib/subject-retake-helpers';
 import { getStudentAcademicRecord } from '@/features/dashboard/lib/get-student-academic-record';
 import { canAccessStudentCourse, getDashboardAccess } from '@/lib/staff-access';
 import EvaluationHistory from '@/app/dashboard/students/[id]/evaluate/evaluation-history';
@@ -68,10 +67,15 @@ export default async function StudentRecordPage({ params }: PageProps) {
     redirect('/dashboard/records');
   }
 
-  const { student, curriculum, terms, existingGrades, gradeSummary, priorCurriculums } =
+  const { student, curriculum, terms, existingGrades, gradeSummary, priorCurriculums, maxYearLevel } =
     record;
   const currentTermKey = `${student.yearLevel}-${student.currentSemester}`;
-  const currentTermLabel = `${formatYearLevelLabel(student.yearLevel)} • ${formatSemesterLabel(student.currentSemester)}`;
+  const currentTermLabel = formatTermRef(
+    { yearLevel: student.yearLevel, semester: student.currentSemester },
+    maxYearLevel
+  );
+  const currentTerm = terms.find((term) => term.key === currentTermKey);
+  const currentTermClosed = currentTerm?.evaluationStatus === 'COMPLETED';
 
   if (!student.curriculumId || !curriculum) {
     return (
@@ -183,10 +187,8 @@ export default async function StudentRecordPage({ params }: PageProps) {
                 studentId={student.id}
                 studentYearLevel={student.yearLevel}
                 studentSemester={student.currentSemester}
-                maxYearLevel={Math.max(
-                  student.yearLevel,
-                  ...terms.map((term) => term.yearLevel)
-                )}
+                maxYearLevel={maxYearLevel}
+                currentTermClosed={currentTermClosed}
                 failedSubjects={failedRetakes}
               />
 

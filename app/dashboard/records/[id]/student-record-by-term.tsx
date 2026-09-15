@@ -240,6 +240,14 @@ export default function StudentRecordByTerm({
                                 Current term
                               </Badge>
                             )}
+                            {term?.isMakeupTerm ? (
+                              <Badge
+                                variant="outline"
+                                className="border-transparent bg-amber-500/15 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"
+                              >
+                                Makeup term
+                              </Badge>
+                            ) : null}
                             {term?.evaluationStatus && (
                               <EvaluationStatusBadge status={term.evaluationStatus} />
                             )}

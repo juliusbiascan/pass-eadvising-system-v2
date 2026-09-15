@@ -26,11 +26,11 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { getGradePassSettings } from '@/lib/grade-settings';
-import { formatSemesterLabel } from '@/lib/semester-terms';
-import { formatYearLevelLabel } from '@/lib/group-curriculum-offerings';
 import { resolveEvaluationDisplay } from '@/lib/evaluation';
 import { getTermEvaluationRecord, listStudentEvaluations } from '@/lib/evaluation-service';
 import { canAccessStudentCourse, getDashboardAccess } from '@/lib/staff-access';
+import { getMaxYearLevel } from '@/lib/student-progression';
+import { formatTermRef, listConfirmedRetakeOfferings } from '@/lib/subject-retakes';
 import { EvaluationStatusPanel } from '@/features/dashboard/components/evaluation-status-panel';
 import EvaluationHistory from './evaluation-history';
 import EvaluationResults from './evaluation-results';
@@ -171,8 +171,9 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
   }
 
   const gradePassSettings = await getGradePassSettings();
+  const maxYearLevel = await getMaxYearLevel(curriculumId);
 
-  const [evaluation, storedEvaluation, evaluationHistory] = await Promise.all([
+  const [evaluation, storedEvaluation, evaluationHistory, confirmedRetakes] = await Promise.all([
     evaluateStudent({
       studentId: id,
       curriculumId,
@@ -181,12 +182,34 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
     }) as Promise<EvaluationResult>,
     getTermEvaluationRecord(termKey),
     listStudentEvaluations(id),
+    listConfirmedRetakeOfferings(id, student.yearLevel, currentSemester),
   ]);
 
-  const currentTermLabel = `${formatYearLevelLabel(student.yearLevel)} • ${formatSemesterLabel(currentSemester)}`;
+  const retakeOfferingData = confirmedRetakes
+    .filter((item) => !offeringData.some((offering) => offering.id === item.id))
+    .map((item) => ({
+      id: item.id,
+      subjectId: item.subjectId,
+      code: item.code,
+      description: item.description,
+      units: item.units,
+      semester: item.semester,
+    }));
+  const gradeFormOfferings = [...retakeOfferingData, ...offeringData];
+
+  const currentTermLabel = formatTermRef(
+    { yearLevel: student.yearLevel, semester: currentSemester },
+    maxYearLevel
+  );
   const nextEnrollmentLabel =
     !('error' in evaluation) && evaluation.nextEnrollmentTerm
-      ? `${formatYearLevelLabel(evaluation.nextEnrollmentTerm.yearLevel)} • ${formatSemesterLabel(evaluation.nextEnrollmentTerm.semester)}`
+      ? formatTermRef(
+          {
+            yearLevel: evaluation.nextEnrollmentTerm.yearLevel,
+            semester: evaluation.nextEnrollmentTerm.semester as typeof currentSemester,
+          },
+          maxYearLevel
+        )
       : null;
 
   const liveEvaluation =
@@ -223,7 +246,15 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
             )}
             <div className="flex flex-wrap gap-2">
               <EvaluationStatusBadge status={displayEvaluation.status} />
-              <Badge variant="outline">{offerings.length} current-term subjects</Badge>
+              <Badge variant="outline">{gradeFormOfferings.length} current-term subjects</Badge>
+              {student.yearLevel > maxYearLevel ? (
+                <Badge
+                  variant="outline"
+                  className="border-transparent bg-amber-500/15 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"
+                >
+                  Makeup term
+                </Badge>
+              ) : null}
             </div>
           </div>
           {isStaff && (
@@ -273,6 +304,7 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
           approvalRemarks={displayEvaluation.approvalRemarks}
           yearLevel={student.yearLevel}
           semester={currentSemester}
+          termLabel={currentTermLabel}
           isStoredResult={displayEvaluation.isStoredResult}
         />
 
@@ -282,10 +314,13 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
             <CardDescription>
               Enter grades for {currentTermLabel}. Numeric grades set status automatically
               on save.
+              {retakeOfferingData.length > 0
+                ? ' Confirmed leftover and retake subjects for this term are included.'
+                : ''}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {offerings.length === 0 ? (
+            {gradeFormOfferings.length === 0 ? (
               <Empty className="py-8">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
@@ -293,7 +328,9 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
                   </EmptyMedia>
                   <EmptyTitle>No subjects this term</EmptyTitle>
                   <EmptyDescription>
-                    No subjects were found for {currentTermLabel} in this curriculum.
+                    {student.yearLevel > maxYearLevel
+                      ? `This is a makeup term. Assign leftover or failed subjects under Records → Subjects to take later so they appear here.`
+                      : `No subjects were found for ${currentTermLabel} in this curriculum.`}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -304,7 +341,7 @@ export default async function StudentEvaluationPage({ params }: PageProps) {
                 semester={currentSemester}
                 termYearLevel={student.yearLevel}
                 termSemester={currentSemester}
-                offerings={offeringData}
+                offerings={gradeFormOfferings}
                 existingGrades={existingGrades}
                 isAdmin={isStaff}
                 staffRole={isHead ? 'HEAD' : isAdmin ? 'ADMIN' : undefined}

@@ -46,7 +46,12 @@ export function StudentPortalHeader({ student }: StudentPortalHeaderProps) {
           <div className="hidden max-w-[16rem] px-2 py-1 text-right lg:block">
             <p className="truncate text-sm font-medium">{student.fullName}</p>
             <p className="truncate text-xs text-muted-foreground">
-              {student.studentId} · Year {student.yearLevel}
+              {student.studentId} ·{' '}
+              {student.isProgramComplete
+                ? 'Program complete'
+                : student.isMakeupStanding
+                  ? 'Makeup term'
+                  : `Year ${student.yearLevel}`}
             </p>
           </div>
           <ThemeModeToggle />

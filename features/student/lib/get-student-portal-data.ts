@@ -1,17 +1,17 @@
 import { auth } from '@/auth';
 import { evaluateStudent } from '@/actions/curriculum';
 import { db } from '@/lib/db';
-import { resolveEvaluationDisplay } from '@/lib/evaluation';
+import { resolveEvaluationDisplay, isEvaluationApproved } from '@/lib/evaluation';
 import { getTermEvaluationRecord } from '@/lib/evaluation-service';
 import { getGradePassSettings } from '@/lib/grade-settings';
-import { formatSemesterLabel } from '@/lib/semester-terms';
 import { getMaxYearLevel } from '@/lib/student-progression';
 
 import { listConfirmedRetakeOfferings } from '@/lib/subject-retakes';
-import { compareTerms } from '@/lib/subject-retake-helpers';
+import { compareTerms, formatTermRef, isMakeupStanding } from '@/lib/subject-retake-helpers';
 import type { SemesterTerm } from '@/app/generated/prisma/enums';
 
 import { detectPriorTermGaps } from './detect-prior-term-gaps';
+import { isCurriculumProgramComplete } from './program-complete';
 import type {
   CurriculumItem,
   EvaluationSubject,
@@ -73,10 +73,15 @@ export async function getStudentPortalData(): Promise<
     semester: activeSemester,
   };
 
+  const gradePassSettings = await getGradePassSettings();
+  const maxYearLevel = await getMaxYearLevel(curriculumId);
+  const makeupStanding = isMakeupStanding(student.yearLevel, maxYearLevel);
+  const curriculumYearCeiling = makeupStanding ? maxYearLevel : student.yearLevel;
+
   const allCurriculumSubjects = await db.curriculumSubject.findMany({
     where: {
       curriculumId,
-      yearLevel: { lte: student.yearLevel },
+      yearLevel: { lte: curriculumYearCeiling },
     },
     include: {
       subject: {
@@ -110,9 +115,6 @@ export async function getStudentPortalData(): Promise<
     orderBy: [{ semester: 'asc' }, { displayOrder: 'asc' }],
   });
 
-  const gradePassSettings = await getGradePassSettings();
-  const maxYearLevel = await getMaxYearLevel(curriculumId);
-
   const [evaluation, storedEvaluation, termEvaluations, confirmedRetakes] = await Promise.all([
     evaluateStudent({
       studentId: student.id,
@@ -128,10 +130,19 @@ export async function getStudentPortalData(): Promise<
     listConfirmedRetakeOfferings(student.id, student.yearLevel, activeSemester),
   ]);
 
-  const currentTermLabel = `Year ${student.yearLevel} • ${formatSemesterLabel(activeSemester)}`;
+  const currentTermLabel = formatTermRef(
+    { yearLevel: student.yearLevel, semester: activeSemester },
+    maxYearLevel
+  );
   const nextEnrollmentLabel =
     !('error' in evaluation) && evaluation.nextEnrollmentTerm
-      ? `Year ${evaluation.nextEnrollmentTerm.yearLevel} • ${formatSemesterLabel(evaluation.nextEnrollmentTerm.semester)}`
+      ? formatTermRef(
+          {
+            yearLevel: evaluation.nextEnrollmentTerm.yearLevel,
+            semester: evaluation.nextEnrollmentTerm.semester as SemesterTerm,
+          },
+          maxYearLevel
+        )
       : null;
 
   const liveEvaluation =
@@ -174,11 +185,7 @@ export async function getStudentPortalData(): Promise<
   }
 
   const retakeOfferingData: CurriculumItem[] = confirmedRetakes
-    .filter(
-      (item) =>
-        !currentTermOfferingIds.has(item.id) &&
-        existingGrades[item.id]?.status !== 'PASSED'
-    )
+    .filter((item) => !currentTermOfferingIds.has(item.id))
     .map((item) => {
       const status = existingGrades[item.id]?.status;
       const scheduleKind = scheduleKindFromStatus(status);
@@ -202,6 +209,8 @@ export async function getStudentPortalData(): Promise<
     semester: activeSemester,
   };
 
+  const currentTermClosed = isEvaluationApproved(storedEvaluation?.status);
+
   const deferredSubjects = curriculumData
     .filter((item) => {
       const status = existingGrades[item.id]?.status;
@@ -213,13 +222,18 @@ export async function getStudentPortalData(): Promise<
         return true;
       }
 
-      const isPrior =
-        compareTerms(
-          { yearLevel: item.yearLevel, semester: item.semester as SemesterTerm },
-          currentTerm
-        ) < 0;
+      const originalTerm = {
+        yearLevel: item.yearLevel,
+        semester: item.semester as SemesterTerm,
+      };
+      const isPrior = compareTerms(originalTerm, currentTerm) < 0;
+      const fromClosedStanding =
+        currentTermClosed && compareTerms(originalTerm, currentTerm) <= 0;
 
-      return isPrior && (status === 'INCOMPLETE' || status === 'PENDING' || !status);
+      return (
+        (isPrior || fromClosedStanding) &&
+        (status === 'INCOMPLETE' || status === 'PENDING' || !status)
+      );
     })
     .map((item) => {
       const scheduleKind = scheduleKindFromStatus(existingGrades[item.id]?.status);
@@ -249,6 +263,15 @@ export async function getStudentPortalData(): Promise<
     }))
   );
 
+  const isProgramComplete = isCurriculumProgramComplete({
+    maxYearLevel,
+    yearLevel: student.yearLevel,
+    semester: activeSemester,
+    subjects: curriculumData,
+    grades: existingGrades,
+    evaluations: termEvaluations,
+  });
+
   return {
     student: {
       id: student.id,
@@ -258,6 +281,8 @@ export async function getStudentPortalData(): Promise<
       yearLevel: student.yearLevel,
       currentSemester: activeSemester,
       email: student.email || student.user.email || session.user.email || null,
+      isMakeupStanding: makeupStanding && !isProgramComplete,
+      isProgramComplete,
     },
     curriculumId,
     gradePassSettings,
@@ -269,6 +294,8 @@ export async function getStudentPortalData(): Promise<
     retakeOfferingData,
     deferredSubjects,
     maxYearLevel,
+    isMakeupStanding: makeupStanding,
+    isProgramComplete,
     priorTermGaps,
     existingGrades,
     hasSubmittedTermGrades: storedEvaluation !== null,

@@ -57,6 +57,7 @@ interface EvaluationResultsViewProps {
   };
   failedSubjects: CurriculumItem[];
   hasPriorTermGaps?: boolean;
+  isMakeupStanding?: boolean;
 }
 
 export function EvaluationResultsView({
@@ -68,6 +69,7 @@ export function EvaluationResultsView({
   termEvaluationLists,
   failedSubjects,
   hasPriorTermGaps = false,
+  isMakeupStanding = false,
 }: EvaluationResultsViewProps) {
   return (
     <div className="space-y-6">
@@ -84,6 +86,7 @@ export function EvaluationResultsView({
         approvalRemarks={displayEvaluation.approvalRemarks}
         yearLevel={yearLevel}
         semester={semester}
+        termLabel={currentTermLabel}
         isStoredResult={displayEvaluation.isStoredResult}
         isStudentView
       />
@@ -92,8 +95,9 @@ export function EvaluationResultsView({
         <CardHeader>
           <CardTitle>Evaluation results</CardTitle>
           <CardDescription>
-            Passed and failed reflect your current term and year. Eligible and blocked show what
-            you can take in your <strong>next</strong> semester or year level.
+            {isMakeupStanding
+              ? 'Passed and failed reflect leftover or retake grades entered this makeup term. Eligible and blocked show the next makeup term, if one is scheduled.'
+              : 'Passed and failed reflect your current term and year. Eligible and blocked show what you can take in your next semester or year level.'}
             {hasPriorTermGaps
               ? ' Blocked subjects may include prerequisites from earlier years that are not marked passed yet.'
               : ''}
@@ -128,7 +132,9 @@ export function EvaluationResultsView({
               emptyMessage={
                 nextEnrollmentLabel
                   ? 'No eligible subjects for your next term yet.'
-                  : 'You are at the final term in your curriculum.'
+                  : isMakeupStanding
+                    ? 'No further curriculum terms. Finish leftover and retake subjects on Grades.'
+                    : 'You are at the final term in your curriculum.'
               }
               showPercent
             />
@@ -144,7 +150,9 @@ export function EvaluationResultsView({
               emptyMessage={
                 nextEnrollmentLabel
                   ? 'No blocked subjects for your next term.'
-                  : 'No blocked subjects — no further terms in your curriculum.'
+                  : isMakeupStanding
+                    ? 'No blocked subjects for a further makeup term.'
+                    : 'No blocked subjects — no further terms in your curriculum.'
               }
               showPercent
             />
