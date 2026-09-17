@@ -130,7 +130,7 @@ export function SupportContent() {
                 id="support-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Juan Dela Cruz"
+                placeholder="Firstname Middlename Lastname"
               />
             </div>
             <div className="space-y-2">

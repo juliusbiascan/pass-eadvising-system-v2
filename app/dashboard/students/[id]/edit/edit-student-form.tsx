@@ -159,7 +159,7 @@ const EditStudentForm = ({ student, curriculums }: EditStudentFormProps) => {
                 <FieldLabel htmlFor="fullName">Full Name</FieldLabel>
                 <Input
                   id="fullName"
-                  placeholder="Juan Dela Cruz"
+                  placeholder="Firstname Middlename Lastname"
                   autoComplete="name"
                   disabled={isPending}
                   {...register("fullName")}
