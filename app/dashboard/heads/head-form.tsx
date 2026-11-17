@@ -10,6 +10,7 @@ import { Building2, Mail } from "lucide-react";
 
 import { registerHead } from "@/actions/register-head";
 import { updateHead } from "@/actions/update-head";
+import { AccountEmailSchema } from "@/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,15 +32,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FormError } from "@/components/form-error";
 import { FormSuccess } from "@/components/form-success";
 import type { CourseOption } from "@/lib/courses";
+import { HeadReviewDialog } from "./head-review-dialog";
 
 const HeadFormSchema = z.object({
   id: z.string().optional(),
   fullName: z.string().min(3, {
     message: "Full name must be at least 3 characters",
   }),
-  email: z.string().email({
-    message: "Valid email is required",
-  }),
+  email: AccountEmailSchema,
   courseIds: z.array(z.string().min(1)).min(1, {
     message: "Assign at least one department",
   }),
@@ -64,6 +64,7 @@ const HeadForm = ({ courses, mode, head }: HeadFormProps) => {
   const router = useRouter();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+  const [review, setReview] = useState<FormValues | null>(null);
   const [isPending, startTransition] = useTransition();
   const isEdit = mode === "edit";
 
@@ -95,19 +96,27 @@ const HeadForm = ({ courses, mode, head }: HeadFormProps) => {
   const onSubmit = (values: FormValues) => {
     setError("");
     setSuccess("");
+    setReview(values);
+  };
+
+  const confirmHead = () => {
+    if (!review) return;
+
+    setError("");
+    setSuccess("");
 
     startTransition(() => {
       const request = isEdit
         ? updateHead({
-            id: values.id || head?.id || "",
-            fullName: values.fullName,
-            email: values.email,
-            courseIds: values.courseIds,
+            id: review.id || head?.id || "",
+            fullName: review.fullName,
+            email: review.email,
+            courseIds: review.courseIds,
           })
         : registerHead({
-            fullName: values.fullName,
-            email: values.email,
-            courseIds: values.courseIds,
+            fullName: review.fullName,
+            email: review.email,
+            courseIds: review.courseIds,
           });
 
       request.then((data) => {
@@ -124,6 +133,15 @@ const HeadForm = ({ courses, mode, head }: HeadFormProps) => {
       });
     });
   };
+
+  const reviewedDepartments = review
+    ? courses.filter((course) => review.courseIds.includes(course.id))
+    : [];
+  const reviewEmailChanged = Boolean(
+    isEdit &&
+      review &&
+      review.email.trim().toLowerCase() !== (head?.email ?? "").trim().toLowerCase()
+  );
 
   const hasCourses = courses.length > 0;
 
@@ -170,15 +188,15 @@ const HeadForm = ({ courses, mode, head }: HeadFormProps) => {
               <Input
                 id="email"
                 type="email"
-                placeholder="head@email.com"
+                placeholder="name@gmail.com"
                 autoComplete="email"
                 disabled={isPending}
                 {...register("email")}
               />
               <FieldDescription>
                 {isEdit
-                  ? "This email is used to sign in to the dashboard."
-                  : "Login credentials will be sent to this address."}
+                  ? "Use a valid address, including Gmail. Changing this email replaces the password and emails a new temporary password to the updated address."
+                  : "Use a valid address, including Gmail. Login credentials will be sent to this address."}
               </FieldDescription>
               <FieldError errors={[errors.email]} />
             </Field>
@@ -255,15 +273,26 @@ const HeadForm = ({ courses, mode, head }: HeadFormProps) => {
           <Link href="/dashboard/heads">Cancel</Link>
         </Button>
         <Button type="submit" disabled={isPending || !hasCourses}>
-          {isPending
-            ? isEdit
-              ? "Saving..."
-              : "Registering..."
-            : isEdit
-              ? "Save Head"
-              : "Register Head"}
+          {isEdit ? "Review and save" : "Review and register"}
         </Button>
       </div>
+
+      {review && (
+        <HeadReviewDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setReview(null);
+          }}
+          mode={mode}
+          fullName={review.fullName.trim().replace(/\s+/g, " ")}
+          email={review.email.trim().toLowerCase()}
+          departments={reviewedDepartments}
+          emailChanged={reviewEmailChanged}
+          isPending={isPending}
+          error={error}
+          onConfirm={confirmHead}
+        />
+      )}
     </form>
   );
 };

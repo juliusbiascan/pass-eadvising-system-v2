@@ -39,6 +39,7 @@ import { FormSuccess } from "@/components/form-success";
 import CurriculumPicker, {
   type CurriculumOption,
 } from "../../register/curriculum-picker";
+import { StudentReviewDialog } from "../../student-review-dialog";
 
 type FormInput = z.input<typeof UpdateStudentSchema>;
 type FormValues = z.output<typeof UpdateStudentSchema>;
@@ -68,6 +69,7 @@ const EditStudentForm = ({ student, curriculums }: EditStudentFormProps) => {
   const router = useRouter();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+  const [review, setReview] = useState<FormValues | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -96,9 +98,17 @@ const EditStudentForm = ({ student, curriculums }: EditStudentFormProps) => {
   const onSubmit = (values: FormValues) => {
     setError("");
     setSuccess("");
+    setReview(values);
+  };
+
+  const confirmUpdate = () => {
+    if (!review) return;
+
+    setError("");
+    setSuccess("");
 
     startTransition(() => {
-      updateStudent(values).then((data) => {
+      updateStudent(review).then((data) => {
         if (data?.error) {
           setError(data.error);
           return;
@@ -112,6 +122,18 @@ const EditStudentForm = ({ student, curriculums }: EditStudentFormProps) => {
       });
     });
   };
+
+  const reviewedCurriculum =
+    curriculums.find((curriculum) => curriculum.id === review?.curriculumId) ??
+    null;
+  const reviewEmailChanged = Boolean(
+    review &&
+      review.email.trim().toLowerCase() !==
+        (student.email ?? "").trim().toLowerCase()
+  );
+  const reviewIsShift = Boolean(
+    review?.curriculumId && review.curriculumId !== student.curriculumId
+  );
 
   const hasCurriculums = curriculums.length > 0;
 
@@ -176,13 +198,15 @@ const EditStudentForm = ({ student, curriculums }: EditStudentFormProps) => {
               <Input
                 id="email"
                 type="email"
-                placeholder="student@email.com"
+                placeholder="name@gmail.com"
                 autoComplete="email"
                 disabled={isPending}
                 {...register("email")}
               />
               <FieldDescription>
-                This email is used for the student portal login.
+                Use a valid address, including Gmail. Changing this email
+                replaces the portal password and emails a new temporary
+                password to the updated address.
               </FieldDescription>
               <FieldError errors={[errors.email]} />
             </Field>
@@ -275,13 +299,29 @@ const EditStudentForm = ({ student, curriculums }: EditStudentFormProps) => {
           <Link href="/dashboard/students">Cancel</Link>
         </Button>
         <Button type="submit" disabled={isPending || !hasCurriculums}>
-          {isPending
-            ? "Saving..."
-            : isShift
-              ? "Save and Shift"
-              : "Save Changes"}
+          {isShift ? "Review and shift" : "Review and save"}
         </Button>
       </div>
+
+      {review && (
+        <StudentReviewDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setReview(null);
+          }}
+          mode="edit"
+          studentId={review.studentId.trim().toUpperCase()}
+          fullName={review.fullName.trim().replace(/\s+/g, " ")}
+          email={review.email.trim().toLowerCase()}
+          yearLevel={review.yearLevel}
+          curriculum={reviewedCurriculum}
+          emailChanged={reviewEmailChanged}
+          isShift={reviewIsShift}
+          isPending={isPending}
+          error={error}
+          onConfirm={confirmUpdate}
+        />
+      )}
     </form>
   );
 };

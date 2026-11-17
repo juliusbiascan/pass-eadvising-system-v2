@@ -235,15 +235,22 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 export const sendStudentCredentialsEmail = async (
   email: string,
   fullName: string,
-  temporaryPassword: string
+  temporaryPassword: string,
+  emailUpdated = false
 ) => {
   const loginLink = `${domain}/auth/login`;
   const firstName = escapeHtml(firstNameFrom(fullName));
   const safeEmail = escapeHtml(email);
   const safePassword = escapeHtml(temporaryPassword);
+  const intro = emailUpdated
+    ? `Hi ${firstName}, an administrator updated the email on your student portal account. Your previous password no longer works. Use the details below to sign in.`
+    : `Hi ${firstName}, an administrator created your student portal account. Use the details below to sign in.`;
+  const textIntro = emailUpdated
+    ? `Hi ${firstNameFrom(fullName)}, the email on your ${brandName} student portal account was updated. Your previous password no longer works.`
+    : `Hi ${firstNameFrom(fullName)}, your ${brandName} student portal account is ready.`;
 
   const content = `
-    <p style="margin:0 0 16px 0">Hi ${firstName}, an administrator created your student portal account. Use the details below to sign in.</p>
+    <p style="margin:0 0 16px 0">${intro}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;background:${colors.iron};border-radius:12px">
       <tr>
         <td style="padding:16px 18px">
@@ -260,12 +267,16 @@ export const sendStudentCredentialsEmail = async (
 
   return sendEmail({
     to: email,
-    subject: `Your ${brandName} student portal is ready`,
-    text: `Hi ${firstNameFrom(fullName)}, your ${brandName} student portal account is ready.\n\nEmail: ${email}\nTemporary password: ${temporaryPassword}\n\nSign in here: ${loginLink}\n\nYou must change this password before you can use the portal.`,
+    subject: emailUpdated
+      ? `Your ${brandName} student portal login was updated`
+      : `Your ${brandName} student portal is ready`,
+    text: `${textIntro}\n\nEmail: ${email}\nTemporary password: ${temporaryPassword}\n\nSign in here: ${loginLink}\n\nYou must change this password before you can use the portal.`,
     html: emailLayout({
-      preheader: 'Your student portal account is ready. Sign in and set a new password.',
+      preheader: emailUpdated
+        ? 'Your login email was updated. Sign in with the new temporary password.'
+        : 'Your student portal account is ready. Sign in and set a new password.',
       eyebrow: `${brandName} · Student Portal`,
-      title: 'Your account is ready',
+      title: emailUpdated ? 'Your login email was updated' : 'Your account is ready',
       content,
       buttonText: 'Open student portal',
       buttonHref: loginLink,
@@ -277,7 +288,8 @@ export const sendHeadCredentialsEmail = async (
   email: string,
   fullName: string,
   temporaryPassword: string,
-  departmentLabels: string[]
+  departmentLabels: string[],
+  emailUpdated = false
 ) => {
   const loginLink = `${domain}/auth/login`;
   const firstName = escapeHtml(firstNameFrom(fullName));
@@ -286,9 +298,15 @@ export const sendHeadCredentialsEmail = async (
   const departments = departmentLabels.length
     ? departmentLabels.map((label) => escapeHtml(label)).join(", ")
     : "your assigned departments";
+  const intro = emailUpdated
+    ? `Hi ${firstName}, an administrator updated the email on your department head account. Your previous password no longer works. Use the details below to sign in.`
+    : `Hi ${firstName}, an administrator created your department head account. Use the details below to sign in.`;
+  const textIntro = emailUpdated
+    ? `Hi ${firstNameFrom(fullName)}, the email on your ${brandName} department head account was updated. Your previous password no longer works.`
+    : `Hi ${firstNameFrom(fullName)}, your ${brandName} department head account is ready.`;
 
   const content = `
-    <p style="margin:0 0 16px 0">Hi ${firstName}, an administrator created your department head account. Use the details below to sign in.</p>
+    <p style="margin:0 0 16px 0">${intro}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;background:${colors.iron};border-radius:12px">
       <tr>
         <td style="padding:16px 18px">
@@ -307,12 +325,16 @@ export const sendHeadCredentialsEmail = async (
 
   return sendEmail({
     to: email,
-    subject: `Your ${brandName} department head account is ready`,
-    text: `Hi ${firstNameFrom(fullName)}, your ${brandName} department head account is ready.\n\nEmail: ${email}\nTemporary password: ${temporaryPassword}\nAssigned departments: ${departmentLabels.join(", ") || "none"}\n\nSign in here: ${loginLink}\n\nYou must change this password before you can use the dashboard.`,
+    subject: emailUpdated
+      ? `Your ${brandName} department head login was updated`
+      : `Your ${brandName} department head account is ready`,
+    text: `${textIntro}\n\nEmail: ${email}\nTemporary password: ${temporaryPassword}\nAssigned departments: ${departmentLabels.join(", ") || "none"}\n\nSign in here: ${loginLink}\n\nYou must change this password before you can use the dashboard.`,
     html: emailLayout({
-      preheader: "Your department head account is ready. Sign in and set a new password.",
+      preheader: emailUpdated
+        ? "Your login email was updated. Sign in with the new temporary password."
+        : "Your department head account is ready. Sign in and set a new password.",
       eyebrow: `${brandName} · Department Head`,
-      title: "Your account is ready",
+      title: emailUpdated ? "Your login email was updated" : "Your account is ready",
       content,
       buttonText: "Open dashboard",
       buttonHref: loginLink,

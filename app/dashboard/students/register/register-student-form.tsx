@@ -39,6 +39,7 @@ import { FormSuccess } from "@/components/form-success";
 import CurriculumPicker, {
   type CurriculumOption,
 } from "./curriculum-picker";
+import { StudentReviewDialog } from "../student-review-dialog";
 
 type FormInput = z.input<typeof StudentRegistrationSchema>;
 type FormValues = z.output<typeof StudentRegistrationSchema>;
@@ -58,6 +59,7 @@ const RegisterStudentForm = ({ curriculums }: RegisterStudentFormProps) => {
   const router = useRouter();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+  const [review, setReview] = useState<FormValues | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -81,9 +83,17 @@ const RegisterStudentForm = ({ curriculums }: RegisterStudentFormProps) => {
   const onSubmit = (values: FormValues) => {
     setError("");
     setSuccess("");
+    setReview(values);
+  };
+
+  const confirmRegistration = () => {
+    if (!review) return;
+
+    setError("");
+    setSuccess("");
 
     startTransition(() => {
-      registerStudent(values).then((data) => {
+      registerStudent(review).then((data) => {
         if (data?.error) {
           setError(data.error);
           return;
@@ -97,6 +107,10 @@ const RegisterStudentForm = ({ curriculums }: RegisterStudentFormProps) => {
       });
     });
   };
+
+  const reviewedCurriculum =
+    curriculums.find((curriculum) => curriculum.id === review?.curriculumId) ??
+    null;
 
   const hasCurriculums = curriculums.length > 0;
 
@@ -161,13 +175,14 @@ const RegisterStudentForm = ({ curriculums }: RegisterStudentFormProps) => {
               <Input
                 id="email"
                 type="email"
-                placeholder="student@email.com"
+                placeholder="name@gmail.com"
                 autoComplete="email"
                 disabled={isPending}
                 {...register("email")}
               />
               <FieldDescription>
-                Login credentials will be sent to this address.
+                Use a valid address, including Gmail. Login credentials will
+                be sent to this address.
               </FieldDescription>
               <FieldError errors={[errors.email]} />
             </Field>
@@ -250,9 +265,27 @@ const RegisterStudentForm = ({ curriculums }: RegisterStudentFormProps) => {
           <Link href="/dashboard/students">Cancel</Link>
         </Button>
         <Button type="submit" disabled={isPending || !hasCurriculums}>
-          {isPending ? "Registering..." : "Register Student"}
+          Review and register
         </Button>
       </div>
+
+      {review && (
+        <StudentReviewDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setReview(null);
+          }}
+          mode="register"
+          studentId={review.studentId.trim().toUpperCase()}
+          fullName={review.fullName.trim().replace(/\s+/g, " ")}
+          email={review.email.trim().toLowerCase()}
+          yearLevel={review.yearLevel}
+          curriculum={reviewedCurriculum}
+          isPending={isPending}
+          error={error}
+          onConfirm={confirmRegistration}
+        />
+      )}
     </form>
   );
 };

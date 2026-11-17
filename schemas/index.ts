@@ -63,14 +63,30 @@ export const RegisterSchema = z.object({
     }),
 });
 
+/**
+ * Practical account address: trimmed, lowercased, and capped at 254 characters.
+ * Allows Gmail local parts with dots and plus aliases (name+tag@gmail.com).
+ * Rejects spaces, missing domains, consecutive dots, and a local part that
+ * starts or ends with a dot.
+ */
+const ACCOUNT_EMAIL_PATTERN =
+  /^(?!.*\.\.)[a-z0-9](?:[a-z0-9._+-]*[a-z0-9])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
+
+export const AccountEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254, { message: "Email must be at most 254 characters" })
+  .regex(ACCOUNT_EMAIL_PATTERN, {
+    message: "Enter a valid email address, such as name@gmail.com",
+  });
+
 export const UpdateStudentSchema = z.object({
   id: z.string().min(1, { message: "Student record is required" }),
   studentId: z.string().min(1, {
     message: "Student ID is required",
   }),
-  email: z.string().email({
-    message: "Valid email is required",
-  }),
+  email: AccountEmailSchema,
   fullName: z.string().min(3, {
     message: "Full name must be at least 3 characters",
   }),
@@ -152,9 +168,7 @@ export const HeadRegistrationSchema = z.object({
   fullName: z.string().min(3, {
     message: "Full name must be at least 3 characters",
   }),
-  email: z.string().email({
-    message: "Valid email is required",
-  }),
+  email: AccountEmailSchema,
   courseIds: z.array(z.string().min(1)).min(1, {
     message: "Assign at least one department",
   }),
@@ -165,9 +179,7 @@ export const UpdateHeadSchema = z.object({
   fullName: z.string().min(3, {
     message: "Full name must be at least 3 characters",
   }),
-  email: z.string().email({
-    message: "Valid email is required",
-  }),
+  email: AccountEmailSchema,
   courseIds: z.array(z.string().min(1)).min(1, {
     message: "Assign at least one department",
   }),
@@ -177,9 +189,7 @@ export const StudentRegistrationSchema = z.object({
   studentId: z.string().min(1, {
     message: "Student ID is required",
   }),
-  email: z.string().email({
-    message: "Valid email is required",
-  }),
+  email: AccountEmailSchema,
   fullName: z.string().min(3, {
     message: "Full name must be at least 3 characters",
   }),

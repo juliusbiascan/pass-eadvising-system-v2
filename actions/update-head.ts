@@ -1,9 +1,12 @@
 "use server";
 
 import * as z from "zod";
+import { randomBytes } from "node:crypto";
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
+import { sendHeadCredentialsEmail } from "@/lib/mail";
 import { requireAdmin } from "@/lib/staff-access";
 import { UpdateHeadSchema } from "@/schemas";
 
@@ -39,7 +42,7 @@ export const updateHead = async (values: z.infer<typeof UpdateHeadSchema>) => {
 
     const courses = await db.course.findMany({
       where: { id: { in: normalizedData.courseIds } },
-      select: { id: true },
+      select: { id: true, code: true, title: true },
     });
 
     if (courses.length !== normalizedData.courseIds.length) {
@@ -64,12 +67,24 @@ export const updateHead = async (values: z.infer<typeof UpdateHeadSchema>) => {
       return { error: "A head account with this email already exists" };
     }
 
+    const emailChanged =
+      normalizedData.email !== existingHead.email.trim().toLowerCase();
+    const temporaryPassword = emailChanged
+      ? `PASS-${randomBytes(4).toString("hex")}`
+      : null;
+    const hashedPassword = temporaryPassword
+      ? await bcrypt.hash(temporaryPassword, 10)
+      : null;
+
     await db.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: existingHead.userId },
         data: {
           name: normalizedData.fullName,
           email: normalizedData.email,
+          ...(hashedPassword
+            ? { password: hashedPassword, mustChangePassword: true }
+            : {}),
         },
       });
 
@@ -96,7 +111,27 @@ export const updateHead = async (values: z.infer<typeof UpdateHeadSchema>) => {
     revalidatePath("/dashboard/heads");
     revalidatePath(`/dashboard/heads/${existingHead.id}/edit`);
 
-    return { success: "Head updated successfully" };
+    if (!emailChanged || !temporaryPassword) {
+      return { success: "Head updated successfully" };
+    }
+
+    const emailSent = await sendHeadCredentialsEmail(
+      normalizedData.email,
+      normalizedData.fullName,
+      temporaryPassword,
+      courses.map((course) => `${course.code} — ${course.title}`),
+      true
+    );
+
+    if (!emailSent) {
+      return {
+        success: "Head updated successfully, but the new password email failed to send",
+      };
+    }
+
+    return {
+      success: "Head updated successfully. A new temporary password was emailed",
+    };
   } catch (error) {
     console.error("Head update error:", error);
     return { error: "Failed to update head" };

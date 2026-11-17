@@ -1,10 +1,13 @@
 "use server";
 
 import * as z from "zod";
+import { randomBytes } from "node:crypto";
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { sendStudentCredentialsEmail } from "@/lib/mail";
 import { UpdateStudentSchema } from "@/schemas";
 import {
   applyStudentCurriculumShift,
@@ -111,6 +114,14 @@ export const updateStudent = async (
 
     const userId = existing.userId;
     const didShift = existing.curriculumId !== selectedCurriculum.id;
+    const emailChanged =
+      normalizedData.email !== (existing.email ?? "").trim().toLowerCase();
+    const temporaryPassword = emailChanged
+      ? `PASS-${randomBytes(4).toString("hex")}`
+      : null;
+    const hashedPassword = temporaryPassword
+      ? await bcrypt.hash(temporaryPassword, 10)
+      : null;
 
     await db.$transaction(async (tx) => {
       await tx.student.update({
@@ -123,6 +134,9 @@ export const updateStudent = async (
         data: {
           name: normalizedData.fullName,
           email: normalizedData.email,
+          ...(hashedPassword
+            ? { password: hashedPassword, mustChangePassword: true }
+            : {}),
         },
       });
 
@@ -141,10 +155,29 @@ export const updateStudent = async (
 
     revalidateStudentPaths(validated.data.id);
 
+    const base = didShift
+      ? "Student updated and shifted to the new curriculum"
+      : "Student updated successfully";
+
+    if (!emailChanged || !temporaryPassword) {
+      return { success: base };
+    }
+
+    const emailSent = await sendStudentCredentialsEmail(
+      normalizedData.email,
+      normalizedData.fullName,
+      temporaryPassword,
+      true
+    );
+
+    if (!emailSent) {
+      return {
+        success: `${base}, but the new password email failed to send`,
+      };
+    }
+
     return {
-      success: didShift
-        ? "Student updated and shifted to the new curriculum"
-        : "Student updated successfully",
+      success: `${base}. A new temporary password was emailed`,
     };
   } catch (error) {
     console.error("Update student error:", error);
